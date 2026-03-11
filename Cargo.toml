@@ -1,6 +1,51 @@
 [package]
 name = "cmsrust"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
 
 [dependencies]
+# Web framework
+axum = { version = "0.7", features = ["macros"] }
+tower = "0.4"
+tower-http = { version = "0.5", features = ["cors", "trace", "fs"] }
+hyper = "1.0"
+
+# Database & ORM
+sea-orm = { version = "1.0", features = [
+    "sqlx-postgres",
+    "runtime-tokio-native-tls",
+    "macros",
+    "with-chrono",
+    "with-uuid"
+] }
+sea-orm-migration = "1.0"
+
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Authentication & Security
+jsonwebtoken = "9.0"
+bcrypt = "0.15"
+argon2 = "0.5"
+rand = "0.8"
+
+# Utilities
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1.0", features = ["v4", "serde"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+dotenvy = "0.15"
+validator = { version = "0.18", features = ["derive"] }
+thiserror = "1.0"
+
+# File handling
+multer = "3.0"
+image = "0.25"
+
+[dev-dependencies]
+axum-test = "14.0"
+mockall = "0.12"
