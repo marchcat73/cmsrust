@@ -26,4 +26,8 @@ sea-orm-cli migrate generate create_tags_table
 sea-orm-cli migrate generate create_post_relations
 sea-orm-cli migrate generate create_comments_table
 sea-orm-cli migrate generate create_media_table
+
+
+sea-orm-cli migrate up -d /home/user/projects/cmsrust/migration
+
 ```
