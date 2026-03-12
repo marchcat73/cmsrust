@@ -1,4 +1,3 @@
-// src/entities/comment.rs
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -17,8 +16,8 @@ pub struct Model {
     #[sea_orm(column_type = "Text")]
     pub content: String,
 
-    pub status: CommentStatus,
-    pub parent_id: Option<Uuid>,  // Для ответов на комментарии
+    pub status: CommentModerationStatus,
+    pub parent_id: Option<Uuid>,
 
     #[sea_orm(column_type = "TimestampWithTimeZone")]
     pub created_at: DateTime,
@@ -46,9 +45,10 @@ pub enum Relation {
 
 impl ActiveModelBehavior for ActiveModel {}
 
+
 #[derive(Debug, Clone, PartialEq, EnumIter, DeriveActiveEnum, Serialize, Deserialize)]
-#[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "comment_status")]
-pub enum CommentStatus {
+#[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "comment_moderation_status")]
+pub enum CommentModerationStatus {
     #[sea_orm(string_value = "pending")]
     Pending,
     #[sea_orm(string_value = "approved")]

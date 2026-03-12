@@ -1,4 +1,3 @@
-use crate::m20260312_132015_create_posts_table::Posts;
 use sea_orm_migration::prelude::extension::postgres::Type;
 use sea_orm_migration::{prelude::*, schema::*};
 
@@ -8,11 +7,10 @@ pub struct Migration;
 #[async_trait::async_trait]
 impl MigrationTrait for Migration {
     async fn up(&self, manager: &SchemaManager) -> Result<(), DbErr> {
-        // ENUM для статуса комментариев
         manager
             .create_type(
                 Type::create()
-                    .as_enum(Alias::new("comment_status"))
+                    .as_enum(Alias::new("comment_moderation_status"))
                     .values([
                         Alias::new("pending"),
                         Alias::new("approved"),
@@ -25,30 +23,44 @@ impl MigrationTrait for Migration {
 
         manager
             .create_table(
-                table_auto(Comments::Table)
-                    .col(pk_uuid(Comments::Id))
-                    .col(uuid(Comments::PostId))
-                    .col(string_null(Comments::AuthorName))
-                    .col(string_null(Comments::AuthorEmail))
-                    .col(string_null(Comments::AuthorUrl))
-                    .col(text(Comments::Content))
+                Table::create()
+                    .table(Comments::Table)
+                    .if_not_exists()
+                    .col(
+                        ColumnDef::new(Comments::Id)
+                            .uuid()
+                            .not_null()
+                            .primary_key(),
+                    )
+                    .col(ColumnDef::new(Comments::PostId).uuid().not_null())
+                    .col(ColumnDef::new(Comments::AuthorName).string().null())
+                    .col(ColumnDef::new(Comments::AuthorEmail).string().null())
+                    .col(ColumnDef::new(Comments::AuthorUrl).string().null())
+                    .col(ColumnDef::new(Comments::Content).text().not_null())
                     .col(
                         ColumnDef::new(Comments::Status)
-                            .enumeration(
-                                Alias::new("comment_status"),
-                                [
-                                    Alias::new("pending"),
-                                    Alias::new("approved"),
-                                    Alias::new("spam"),
-                                    Alias::new("trash"),
-                                ],
-                            )
+                            .enumeration(Alias::new("comment_moderation_status"), [
+                                Alias::new("pending"),
+                                Alias::new("approved"),
+                                Alias::new("spam"),
+                                Alias::new("trash"),
+                            ])
                             .not_null()
                             .default("pending"),
                     )
-                    .col(uuid_null(Comments::ParentId))
-                    .col(timestamp_with_time_zone(Comments::CreatedAt))
-                    .col(timestamp_with_time_zone(Comments::UpdatedAt))
+                    .col(ColumnDef::new(Comments::ParentId).uuid().null())
+                    .col(
+                        ColumnDef::new(Comments::CreatedAt)
+                            .timestamp_with_time_zone()
+                            .not_null()
+                            .default(Expr::current_timestamp()),
+                    )
+                    .col(
+                        ColumnDef::new(Comments::UpdatedAt)
+                            .timestamp_with_time_zone()
+                            .not_null()
+                            .default(Expr::current_timestamp()),
+                    )
                     .foreign_key(
                         ForeignKey::create()
                             .name("fk_comments_post")
@@ -67,6 +79,28 @@ impl MigrationTrait for Migration {
             )
             .await?;
 
+        // Индекс для фильтрации по статусу
+        manager
+            .create_index(
+                Index::create()
+                    .name("idx_comments_status")
+                    .table(Comments::Table)
+                    .col(Comments::Status)
+                    .to_owned(),
+            )
+            .await?;
+
+        // Индекс для поиска по post_id
+        manager
+            .create_index(
+                Index::create()
+                    .name("idx_comments_post_id")
+                    .table(Comments::Table)
+                    .col(Comments::PostId)
+                    .to_owned(),
+            )
+            .await?;
+
         Ok(())
     }
 
@@ -74,11 +108,14 @@ impl MigrationTrait for Migration {
         manager
             .drop_table(Table::drop().table(Comments::Table).to_owned())
             .await?;
+
         manager
-            .drop_type(Type::drop().name(Alias::new("comment_status")).to_owned())
+            .drop_type(Type::drop().name(Alias::new("comment_moderation_status")).to_owned())
             .await
     }
 }
+
+// ==================== Iden ====================
 
 #[derive(Iden)]
 pub enum Comments {
@@ -93,4 +130,10 @@ pub enum Comments {
     ParentId,
     CreatedAt,
     UpdatedAt,
+}
+
+#[derive(Iden)]
+pub enum Posts {
+    Table,
+    Id,
 }

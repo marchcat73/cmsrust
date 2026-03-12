@@ -12,8 +12,8 @@ impl MigrationTrait for Migration {
             .create_table(
                 Table::create()
                     .table(PostCategories::Table)
-                    .col(pk_uuid(PostCategories::PostId))
-                    .col(pk_uuid(PostCategories::CategoryId))
+                    .col(ColumnDef::new(PostCategories::PostId).uuid().not_null())
+                    .col(ColumnDef::new(PostCategories::CategoryId).uuid().not_null())
                     .foreign_key(
                         ForeignKey::create()
                             .name("fk_post_categories_post")
@@ -43,8 +43,8 @@ impl MigrationTrait for Migration {
             .create_table(
                 Table::create()
                     .table(PostTags::Table)
-                    .col(pk_uuid(PostTags::PostId))
-                    .col(pk_uuid(PostTags::TagId))
+                    .col(ColumnDef::new(PostTags::PostId).uuid().not_null())
+                    .col(ColumnDef::new(PostTags::TagId).uuid().not_null())
                     .foreign_key(
                         ForeignKey::create()
                             .name("fk_post_tags_post")
