@@ -1,19 +1,20 @@
+// src/utils/response.rs
 use serde::Serialize;
 
 #[derive(Debug, Serialize)]
 pub struct AppResponse<T> {
     pub success: bool,
     pub message: Option<String>,
-    pub data: Option<T>,
+    pub data: Option<T>,  // ← Имя поля: data
     pub errors: Option<Vec<String>>,
 }
 
 impl<T: Serialize> AppResponse<T> {
-    pub fn success() -> Self {
+    pub fn success(data: T) -> Self {
         Self {
             success: true,
             message: None,
-            data: Some(data),
+            data: Some(data),  // ✅ ИСПРАВЛЕНО: добавлено имя поля "data:"
             errors: None,
         }
     }
@@ -22,7 +23,7 @@ impl<T: Serialize> AppResponse<T> {
         Self {
             success: true,
             message: Some(message),
-             Some(data),
+            data: Some(data),  // ✅ ИСПРАВЛЕНО: добавлено имя поля "data:"
             errors: None,
         }
     }
@@ -31,7 +32,7 @@ impl<T: Serialize> AppResponse<T> {
         Self {
             success: false,
             message: Some(message),
-             None,
+            data: None,  // ✅ ИСПРАВЛЕНО: добавлено имя поля "data:"
             errors: None,
         }
     }
@@ -40,7 +41,7 @@ impl<T: Serialize> AppResponse<T> {
         Self {
             success: false,
             message: Some("Validation failed".to_string()),
-             None,
+            data: None,  // ✅ ИСПРАВЛЕНО: добавлено имя поля "data:"
             errors: Some(errors),
         }
     }

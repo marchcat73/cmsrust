@@ -19,6 +19,7 @@ use validator::Validate;
 use crate::{
     entities::{post, user, category, tag, post_category, post_tag},
     services::post_service::PostService,
+    services::comment_service::CommentService,
     utils::{jwt::Claims, response::AppResponse},
     AppState,
 };
@@ -152,60 +153,15 @@ pub async fn create_post(
 pub async fn get_post(
     State(state): State<AppState>,
     Path(id): Path<Uuid>,
-    Query(query): Query<GetPostQuery>,
-) -> Result<Json<AppResponse<PostWithRelations>>, (StatusCode, String)> {
-    // Базовый запрос
-    let mut post_query = post::Entity::find()
-        .filter(post::Column::Id.eq(id))
-        .filter(post::Column::Status.ne(post::PostStatus::Trash)); // Не показывать удалённые
-
-    // Для публичного доступа показываем только опубликованные
-    // (в реальном приложении здесь нужна проверка прав)
-    post_query = post_query.filter(post::Column::Status.eq(post::PostStatus::Published));
-
-    // Выполняем запрос
-    let post = post_query
+) -> Result<Json<AppResponse<post::Model>>, StatusCode> {
+    let post = post::Entity::find_by_id(id)
         .one(&state.db)
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("DB error: {}", e)))?
-        .ok_or((StatusCode::NOT_FOUND, "Post not found".to_string()))?;
+        .map_err(|_| StatusCode::NOT_FOUND)?
+        .ok_or(StatusCode::NOT_FOUND)?;
 
-    // Если запрошены связанные данные — загружаем их
-    let (author, categories, tags) = if query.with_relations.unwrap_or(false) {
-        // Загружаем автора
-        let author = post
-            .find_related(user::Entity)
-            .one(&state.db)
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("DB error: {}", e)))?;
-
-        // Загружаем категории через промежуточную таблицу
-        let categories = post
-            .find_related(category::Entity)
-            .all(&state.db)
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("DB error: {}", e)))?;
-
-        // Загружаем теги через промежуточную таблицу
-        let tags = post
-            .find_related(tag::Entity)
-            .all(&state.db)
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("DB error: {}", e)))?;
-
-        (author, categories, tags)
-    } else {
-        (None, vec![], vec![])
-    };
-
-    let response = PostWithRelations {
-        post,
-        author,
-        categories,
-        tags,
-    };
-
-    Ok(Json(AppResponse::success(response)))
+    // ✅ Успешный ответ с данными
+    Ok(Json(AppResponse::success(post)))
 }
 
 /// Получение поста по slug (для SEO-дружественных URL)
@@ -473,4 +429,15 @@ pub async fn restore_post(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Restore failed: {}", e)))?;
 
     Ok(Json(AppResponse::success(restored)))
+}
+
+pub async fn get_post_comments(
+    State(state): State<AppState>,
+    Path(post_id): Path<Uuid>,
+) -> Result<Json<AppResponse<Vec<CommentWithReplies>>>, StatusCode> {
+    let comments = CommentService::get_comments_with_replies(&state.db, post_id)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok(Json(AppResponse::success(comments)))
 }

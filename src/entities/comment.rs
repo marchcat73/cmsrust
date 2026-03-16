@@ -39,14 +39,12 @@ pub enum Relation {
         to = "super::comment::Column::Id"
     )]
     Parent,
-    #[sea_orm(has_many = "super::comment::Entity")]
-    Children,
 }
 
 impl ActiveModelBehavior for ActiveModel {}
 
 
-#[derive(Debug, Clone, PartialEq, EnumIter, DeriveActiveEnum, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Serialize, Deserialize)]
 #[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "comment_moderation_status")]
 pub enum CommentModerationStatus {
     #[sea_orm(string_value = "pending")]

@@ -19,8 +19,6 @@ pub struct Model {
 pub enum Relation {
     #[sea_orm(has_many = "super::post_tag::Entity")]
     PostTags,
-    #[sea_orm(has_many = "super::post::Entity")]
-    Posts,
 }
 
 impl ActiveModelBehavior for ActiveModel {}

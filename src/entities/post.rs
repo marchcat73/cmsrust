@@ -9,18 +9,18 @@ pub struct Model {
     pub id: Uuid,
 
     pub title: String,
-    pub slug: String,  // URL-friendly version of title
+    pub slug: String,
 
     #[sea_orm(column_type = "Text")]
     pub content: String,
 
     pub excerpt: Option<String>,
 
-    pub featured_image: Option<Uuid>,  // Reference to media
+    pub featured_image: Option<Uuid>,
 
-    pub status: PostStatus,  // Draft, Published, Archived, Trash
+    pub status: PostStatus,
 
-    pub comment_status: CommentStatus,  // Open, Closed
+    pub comment_status: CommentStatus,
 
     pub author_id: Uuid,
 
@@ -40,10 +40,15 @@ pub enum Relation {
         to = "super::user::Column::Id"
     )]
     Author,
-    #[sea_orm(has_many = "super::category::Entity")]
-    Categories,
-    #[sea_orm(has_many = "super::tag::Entity")]
-    Tags,
+
+    // ✅ SeaORM 1.0+: только связь с промежуточной таблицей
+    #[sea_orm(has_many = "super::post_category::Entity")]
+    PostCategories,
+
+    // ✅ SeaORM 1.0+: только связь с промежуточной таблицей
+    #[sea_orm(has_many = "super::post_tag::Entity")]
+    PostTags,
+
     #[sea_orm(has_many = "super::comment::Entity")]
     Comments,
 }
@@ -61,4 +66,13 @@ pub enum PostStatus {
     Archived,
     #[sea_orm(string_value = "trash")]
     Trash,
+}
+
+#[derive(Debug, Clone, PartialEq, EnumIter, DeriveActiveEnum, Serialize, Deserialize)]
+#[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "comment_status")]
+pub enum CommentStatus {
+    #[sea_orm(string_value = "open")]
+    Open,
+    #[sea_orm(string_value = "closed")]
+    Closed,
 }

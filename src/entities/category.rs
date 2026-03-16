@@ -12,7 +12,7 @@ pub struct Model {
     pub slug: String,
     pub description: Option<String>,
 
-    pub parent_id: Option<Uuid>,  // Для вложенных категорий
+    pub parent_id: Option<Uuid>,
 
     #[sea_orm(column_type = "TimestampWithTimeZone")]
     pub created_at: DateTime,
@@ -28,12 +28,10 @@ pub enum Relation {
         to = "super::category::Column::Id"
     )]
     Parent,
-    #[sea_orm(has_many = "super::category::Entity")]
-    Children,
+
+    // ✅ Только связь с промежуточной таблицей
     #[sea_orm(has_many = "super::post_category::Entity")]
     PostCategories,
-    #[sea_orm(has_many = "super::post::Entity")]
-    Posts,
 }
 
 impl ActiveModelBehavior for ActiveModel {}
