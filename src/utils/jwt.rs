@@ -1,8 +1,10 @@
+// src/utils/jwt.rs
 use jsonwebtoken::{EncodingKey, DecodingKey, Header, Validation, encode, decode};
 use serde::{Serialize, Deserialize};
 use chrono::{Utc, Duration};
 
-#[derive(Debug, Serialize, Deserialize)]
+// ✅ ДОБАВИТЬ #[derive(Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Claims {
     pub sub: String,  // user id
     pub username: String,

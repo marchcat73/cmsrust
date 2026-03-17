@@ -7,13 +7,10 @@ use serde::{Deserialize, Serialize};
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: Uuid,
-
     pub name: String,
     pub slug: String,
     pub description: Option<String>,
-
     pub parent_id: Option<Uuid>,
-
     #[sea_orm(column_type = "TimestampWithTimeZone")]
     pub created_at: DateTime,
     #[sea_orm(column_type = "TimestampWithTimeZone")]
@@ -28,8 +25,6 @@ pub enum Relation {
         to = "super::category::Column::Id"
     )]
     Parent,
-
-    // ✅ Только связь с промежуточной таблицей
     #[sea_orm(has_many = "super::post_category::Entity")]
     PostCategories,
 }

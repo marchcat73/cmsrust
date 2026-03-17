@@ -31,3 +31,11 @@ sea-orm-cli migrate generate create_media_table
 sea-orm-cli migrate up -d /home/user/projects/cmsrust/migration
 
 ```
+
+# Errors
+
+```bash
+
+cargo check 2>&1 | tee build_error.log
+
+```

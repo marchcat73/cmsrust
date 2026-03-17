@@ -7,10 +7,8 @@ use serde::{Deserialize, Serialize};
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: Uuid,
-
     pub name: String,
     pub slug: String,
-
     #[sea_orm(column_type = "TimestampWithTimeZone")]
     pub created_at: DateTime,
 }

@@ -1,27 +1,26 @@
+// src/handlers/posts.rs
 use axum::{
-    extract::{State, Path, Query},
-    http::StatusCode,
+    extract::{FromRequestParts, Path, Query, State},
+    http::{StatusCode, request::Parts},
     response::Json,
-    routing::{get, post, put, delete},
+    routing::{get, put, post},
     Router,
-    Extension,
 };
+use axum::extract::Json as AxumJson;
 use chrono::{DateTime, Utc};
 use sea_orm::{
-    EntityTrait, ColumnTrait, QueryFilter, QuerySelect,
-    PaginatorTrait, ActiveModelTrait, Set, ActiveValue,
-    RelationTrait, DbErr, DeleteResult
+    ActiveModelTrait, ColumnTrait, DbErr, DeleteResult, EntityTrait,
+    QueryFilter, QuerySelect, Set
 };
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use validator::Validate;
 
 use crate::{
-    entities::{post, user, category, tag, post_category, post_tag},
-    services::post_service::PostService,
-    services::comment_service::CommentService,
-    utils::{jwt::Claims, response::AppResponse},
     AppState,
+    entities::{category, post, post_category, post_tag, tag, user},
+    services::post_service::PostService,
+    utils::{jwt::Claims, response::AppResponse},
 };
 
 // ==================== REQUEST/RESPONSE DTO ====================
@@ -51,7 +50,6 @@ pub struct CreatePostRequest {
 
 #[derive(Debug, Deserialize)]
 pub struct GetPostQuery {
-    /// Загружать ли связанные данные (автор, категории, теги)
     #[serde(default)]
     pub with_relations: bool,
 }
@@ -79,19 +77,19 @@ pub struct PostWithRelations {
     pub tags: Vec<tag::Model>,
 }
 
-// ==================== Кастомный экстрактор для Claims ====================
+// ==================== ClaimsExtractor ====================
 
 #[derive(Clone)]
 pub struct ClaimsExtractor(pub Claims);
 
-impl<S> axum::extract::FromRequestParts<S> for ClaimsExtractor
+impl<S> FromRequestParts<S> for ClaimsExtractor
 where
     S: Send + Sync,
 {
     type Rejection = (StatusCode, &'static str);
 
     async fn from_request_parts(
-        parts: &mut http::request::Parts,
+        parts: &mut Parts,
         _state: &S,
     ) -> Result<Self, Self::Rejection> {
         parts
@@ -103,18 +101,25 @@ where
     }
 }
 
+impl ClaimsExtractor {
+    pub fn user_id(&self) -> Uuid {
+        Uuid::parse_str(&self.0.sub).unwrap_or_else(|_| Uuid::new_v4())
+    }
+}
+
+// ==================== Router ====================
+
 pub fn posts_router() -> Router<AppState> {
     Router::new()
-        // Публичные маршруты (можно вынести отдельно)
         .route("/posts", get(list_posts))
         .route("/posts/:id", get(get_post))
         .route("/posts/slug/:slug", get(get_post_by_slug))
-
-        // Защищённые маршруты (требуют auth middleware)
         .route("/posts", post(create_post))
         .route("/posts/:id", put(update_post).delete(delete_post))
-        .route("/posts/:id/restore", post(restore_post))  // восстановление
+        .route("/posts/:id/restore", post(restore_post))
 }
+
+// ==================== Handlers ====================
 
 pub async fn list_posts(
     State(state): State<AppState>,
@@ -136,20 +141,16 @@ pub async fn list_posts(
 
 pub async fn create_post(
     State(state): State<AppState>,
-    claims: ClaimsExtractor,  // Custom extractor для claims
-    Json(payload): Json<CreatePostRequest>,
+    claims: ClaimsExtractor,
+    AxumJson(payload): AxumJson<CreatePostRequest>,
 ) -> Result<(StatusCode, Json<AppResponse<post::Model>>), StatusCode> {
-    let post = PostService::create_post(&state.db, claims.user_id, payload)
+    let post = PostService::create_post(&state.db, claims.user_id(), payload)
         .await
         .map_err(|_| StatusCode::BAD_REQUEST)?;
 
     Ok((StatusCode::CREATED, Json(AppResponse::success(post))))
 }
 
-/// Получение поста по ID с опциональной загрузкой связанных данных
-///
-/// Пример запроса:
-/// GET /api/posts/550e8400-e29b-41d4-a716-446655440000?with_relations=true
 pub async fn get_post(
     State(state): State<AppState>,
     Path(id): Path<Uuid>,
@@ -160,17 +161,13 @@ pub async fn get_post(
         .map_err(|_| StatusCode::NOT_FOUND)?
         .ok_or(StatusCode::NOT_FOUND)?;
 
-    // ✅ Успешный ответ с данными
     Ok(Json(AppResponse::success(post)))
 }
 
-/// Получение поста по slug (для SEO-дружественных URL)
-///
-/// Пример: GET /api/posts/slug/moj-pervyj-post
 pub async fn get_post_by_slug(
     State(state): State<AppState>,
     Path(slug): Path<String>,
-    Query(query): Query<GetPostQuery>,
+    Query(_query): Query<GetPostQuery>,
 ) -> Result<Json<AppResponse<PostWithRelations>>, (StatusCode, String)> {
     let post = post::Entity::find()
         .filter(post::Column::Slug.eq(&slug))
@@ -180,22 +177,20 @@ pub async fn get_post_by_slug(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("DB error: {}", e)))?
         .ok_or((StatusCode::NOT_FOUND, "Post not found".to_string()))?;
 
-    // Загружаем связанные данные (аналогично get_post)
+    // Загружаем автора
     let author = post
         .find_related(user::Entity)
         .one(&state.db)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("DB error: {}", e)))?;
 
-    let categories = post
-        .find_related(category::Entity)
-        .all(&state.db)
+    // Загружаем категории через сервис (many-to-many)
+    let categories = PostService::get_post_categories(&state.db, post.id)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("DB error: {}", e)))?;
 
-    let tags = post
-        .find_related(tag::Entity)
-        .all(&state.db)
+    // Загружаем теги через сервис (many-to-many)
+    let tags = PostService::get_post_tags(&state.db, post.id)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("DB error: {}", e)))?;
 
@@ -209,42 +204,26 @@ pub async fn get_post_by_slug(
     Ok(Json(AppResponse::success(response)))
 }
 
-/// Обновление поста по ID
-///
-/// 🔐 Требует аутентификации и прав автора/администратора
-///
-/// Пример запроса:
-/// PUT /api/posts/550e8400-e29b-41d4-a716-446655440000
-/// {
-///   "title": "Обновлённый заголовок",
-///   "content": "Новый контент...",
-///   "status": "published"
-/// }
 pub async fn update_post(
     State(state): State<AppState>,
     Path(id): Path<Uuid>,
     ClaimsExtractor(claims): ClaimsExtractor,
-    Json(payload): Json<UpdatePostRequest>,
+    AxumJson(payload): AxumJson<UpdatePostRequest>,
 ) -> Result<(StatusCode, Json<AppResponse<post::Model>>), (StatusCode, String)> {
-    // 1. Находим существующий пост
     let existing_post = post::Entity::find_by_id(id)
         .one(&state.db)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("DB error: {}", e)))?
         .ok_or((StatusCode::NOT_FOUND, "Post not found".to_string()))?;
 
-    // 2. Проверка прав: только автор или админ может редактировать
     if existing_post.author_id.to_string() != claims.sub && claims.role != "admin" {
         return Err((StatusCode::FORBIDDEN, "You can only edit your own posts".to_string()));
     }
 
-    // 3. Подготовка активных полей для обновления
     let mut post_active: post::ActiveModel = existing_post.clone().into();
 
-    // Обновляем только переданные поля (Option-поля позволяют частичное обновление)
     if let Some(title) = payload.title {
         post_active.title = Set(title);
-        // Автогенерация slug если не передан явно
         if payload.slug.is_none() {
             post_active.slug = Set(PostService::generate_slug(&title));
         }
@@ -264,10 +243,8 @@ pub async fn update_post(
 
     if let Some(status) = payload.status {
         post_active.status = Set(status);
-
-        // Авто-установка published_at при публикации
         if status == post::PostStatus::Published && existing_post.published_at.is_none() {
-            post_active.published_at = Set(Some(Utc::now()));
+            post_active.published_at = Set(Some(Utc::now().naive_utc()));
         }
     }
 
@@ -280,13 +257,11 @@ pub async fn update_post(
     }
 
     if let Some(published_at) = payload.published_at {
-        post_active.published_at = Set(published_at);
+        post_active.published_at = Set(published_at.map(|dt| dt.naive_utc()));
     }
 
-    // Всегда обновляем timestamp
-    post_active.updated_at = Set(Utc::now());
+    post_active.updated_at = Set(Utc::now().naive_utc());
 
-    // 4. Сохраняем изменения
     let updated_post = post_active
         .update(&state.db)
         .await
@@ -296,16 +271,14 @@ pub async fn update_post(
             _ => (StatusCode::INTERNAL_SERVER_ERROR, format!("Update failed: {}", e)),
         })?;
 
-    // 5. Обновляем связи с категориями если переданы
+    // Обновляем связи с категориями
     if let Some(cat_ids) = payload.category_ids {
-        // Удаляем старые связи
         post_category::Entity::delete_many()
             .filter(post_category::Column::PostId.eq(id))
             .exec(&state.db)
             .await
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("DB error: {}", e)))?;
 
-        // Создаём новые
         for cat_id in cat_ids {
             post_category::ActiveModel {
                 post_id: Set(id),
@@ -317,7 +290,7 @@ pub async fn update_post(
         }
     }
 
-    // 6. Обновляем связи с тегами если переданы
+    // Обновляем связи с тегами
     if let Some(tag_ids) = payload.tag_ids {
         post_tag::Entity::delete_many()
             .filter(post_tag::Column::PostId.eq(id))
@@ -339,34 +312,22 @@ pub async fn update_post(
     Ok((StatusCode::OK, Json(AppResponse::success(updated_post))))
 }
 
-/// Удаление поста по ID
-///
-/// 🔐 Требует аутентификации и прав автора/администратора
-///
-/// 💡 Реализовано как "мягкое удаление": пост помечается статусом "trash"
-///    а не удаляется физически из БД (как в WordPress)
-///
-/// Пример: DELETE /api/posts/550e8400-e29b-41d4-a716-446655440000
 pub async fn delete_post(
     State(state): State<AppState>,
     Path(id): Path<Uuid>,
     ClaimsExtractor(claims): ClaimsExtractor,
 ) -> Result<Json<AppResponse<String>>, (StatusCode, String)> {
-    // 1. Находим пост
     let existing_post = post::Entity::find_by_id(id)
         .one(&state.db)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("DB error: {}", e)))?
         .ok_or((StatusCode::NOT_FOUND, "Post not found".to_string()))?;
 
-    // 2. Проверка прав
     if existing_post.author_id.to_string() != claims.sub && claims.role != "admin" {
         return Err((StatusCode::FORBIDDEN, "You can only delete your own posts".to_string()));
     }
 
-    // 3. Админ может удалить окончательно, остальные — только в "корзину"
     if claims.role == "admin" {
-        // 🔥 Физическое удаление (только для админов!)
         let result: DeleteResult = post::Entity::delete_by_id(id)
             .exec(&state.db)
             .await
@@ -378,10 +339,9 @@ pub async fn delete_post(
 
         Ok(Json(AppResponse::success("Post permanently deleted".to_string())))
     } else {
-        // 🗂️ Мягкое удаление: меняем статус на Trash
         let mut post_active: post::ActiveModel = existing_post.into();
         post_active.status = Set(post::PostStatus::Trash);
-        post_active.updated_at = Set(Utc::now());
+        post_active.updated_at = Set(Utc::now().naive_utc());
 
         post_active
             .update(&state.db)
@@ -392,11 +352,6 @@ pub async fn delete_post(
     }
 }
 
-/// Восстановление поста из "корзины" (trash → draft)
-///
-/// 🔐 Только автор или админ
-///
-/// POST /api/posts/:id/restore
 pub async fn restore_post(
     State(state): State<AppState>,
     Path(id): Path<Uuid>,
@@ -408,20 +363,17 @@ pub async fn restore_post(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("DB error: {}", e)))?
         .ok_or((StatusCode::NOT_FOUND, "Post not found".to_string()))?;
 
-    // Можно восстанавливать только посты из корзины
     if existing_post.status != post::PostStatus::Trash {
         return Err((StatusCode::BAD_REQUEST, "Post is not in trash".to_string()));
     }
 
-    // Проверка прав
     if existing_post.author_id.to_string() != claims.sub && claims.role != "admin" {
         return Err((StatusCode::FORBIDDEN, "Permission denied".to_string()));
     }
 
-    // Меняем статус на Draft
     let mut post_active: post::ActiveModel = existing_post.into();
     post_active.status = Set(post::PostStatus::Draft);
-    post_active.updated_at = Set(Utc::now());
+    post_active.updated_at = Set(Utc::now().naive_utc());
 
     let restored = post_active
         .update(&state.db)
@@ -429,15 +381,4 @@ pub async fn restore_post(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Restore failed: {}", e)))?;
 
     Ok(Json(AppResponse::success(restored)))
-}
-
-pub async fn get_post_comments(
-    State(state): State<AppState>,
-    Path(post_id): Path<Uuid>,
-) -> Result<Json<AppResponse<Vec<CommentWithReplies>>>, StatusCode> {
-    let comments = CommentService::get_comments_with_replies(&state.db, post_id)
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-
-    Ok(Json(AppResponse::success(comments)))
 }
