@@ -1,5 +1,12 @@
 # CMS Rust
 
+## Database
+
+```bash
+CREATE USER cmsrust WITH PASSWORD 'cmsrust';
+CREATE DATABASE cmsrustdb OWNER cmsrust;
+```
+
 ```bash
 cargo install sea-orm-cli@^1.0
 
