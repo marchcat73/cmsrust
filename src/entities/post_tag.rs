@@ -13,14 +13,12 @@ pub struct Model {
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
-    // ✅ Обязательно: связь с post
     #[sea_orm(
         belongs_to = "super::post::Entity",
         from = "Column::PostId",
         to = "super::post::Column::Id"
     )]
     Post,
-    // ✅ Обязательно: связь с tag (без этого будет ошибка!)
     #[sea_orm(
         belongs_to = "super::tag::Entity",
         from = "Column::TagId",
@@ -30,3 +28,16 @@ pub enum Relation {
 }
 
 impl ActiveModelBehavior for ActiveModel {}
+
+// ✅ Добавить реализацию Related для many-to-many
+impl Related<super::post::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Post.def()
+    }
+}
+
+impl Related<super::tag::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Tag.def()
+    }
+}

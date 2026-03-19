@@ -28,3 +28,16 @@ pub enum Relation {
 }
 
 impl ActiveModelBehavior for ActiveModel {}
+
+// ✅ Добавить реализацию Related для many-to-many
+impl Related<super::post::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Post.def()
+    }
+}
+
+impl Related<super::category::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Category.def()
+    }
+}
