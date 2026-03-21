@@ -8,6 +8,7 @@ pub struct Model {
     pub id: Uuid,
 
     pub post_id: Uuid,
+    pub author_id: Option<Uuid>,
 
     pub author_name: Option<String>,
     pub author_email: Option<String>,
@@ -34,6 +35,12 @@ pub enum Relation {
     )]
     Post,
     #[sea_orm(
+        belongs_to = "super::user::Entity",
+        from = "Column::AuthorId",
+        to = "super::user::Column::Id"
+    )]
+    Author,
+    #[sea_orm(
         belongs_to = "super::comment::Entity",
         from = "Column::ParentId",
         to = "super::comment::Column::Id"
@@ -55,4 +62,16 @@ pub enum CommentModerationStatus {
     Spam,
     #[sea_orm(string_value = "trash")]
     Trash,
+}
+
+impl Related<super::post::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Post.def()
+    }
+}
+
+impl Related<super::user::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Author.def()
+    }
 }
