@@ -44,12 +44,12 @@ async fn main() {
         .route("/health", get(|| async { "OK" }))
         // Публичные маршруты
         .route("/api/posts", get(handlers::posts::list_posts))
-        .route("/api/posts/:id", get(handlers::posts::get_post))
-        .route("/api/posts/slug/:slug", get(handlers::posts::get_post_by_slug))
+        .route("/api/posts/{id}", get(handlers::posts::get_post))
+        .route("/api/posts/slug/{slug}", get(handlers::posts::get_post_by_slug))
         // Защищённые маршруты
         .route("/api/posts", post(handlers::posts::create_post))
-        .route("/api/posts/:id", put(handlers::posts::update_post).delete(handlers::posts::delete_post))
-        .route("/api/posts/:id/restore", post(handlers::posts::restore_post))
+        .route("/api/posts/{id}", put(handlers::posts::update_post).delete(handlers::posts::delete_post))
+        .route("/api/posts/{id}/restore", post(handlers::posts::restore_post))
         .layer(TraceLayer::new_for_http())
         .layer(cors)
         .with_state(app_state);
