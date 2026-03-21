@@ -1,20 +1,20 @@
 // src/handlers/posts.rs
 use axum::{
-    extract::{FromRequestParts, Path, Query, State},
+    extract::{Path, Query, State},
     http::{StatusCode, request::Parts},
     response::Json,
     routing::{get, put, post},
     Router,
 };
+use axum::extract::FromRequestParts;
 use axum::extract::Json as AxumJson;
 use chrono::{DateTime, Utc};
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DbErr, DeleteResult, EntityTrait,
-    QueryFilter, QuerySelect, Set
+    QueryFilter, Set
 };
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use validator::Validate;
 
 use crate::{
     AppState,
@@ -27,19 +27,17 @@ use crate::{
 
 #[derive(Debug, Deserialize)]
 pub struct ListPostsQuery {
-    page: Option<u64>,
-    per_page: Option<u64>,
-    status: Option<post::PostStatus>,
-    author_id: Option<Uuid>,
-    category_id: Option<Uuid>,
-    search: Option<String>,
+    pub page: Option<u64>,
+    pub per_page: Option<u64>,
+    pub status: Option<post::PostStatus>,
+    pub author_id: Option<Uuid>,
+    pub category_id: Option<Uuid>,
+    pub search: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Validate)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct CreatePostRequest {
-    #[validate(length(min = 3, max = 200))]
     pub title: String,
-    #[validate(length(min = 10))]
     pub content: String,
     pub excerpt: Option<String>,
     pub slug: Option<String>,
@@ -177,19 +175,17 @@ pub async fn get_post_by_slug(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("DB error: {}", e)))?
         .ok_or((StatusCode::NOT_FOUND, "Post not found".to_string()))?;
 
-    // Загружаем автора
-    let author = post
-        .find_related(user::Entity)
-        .one(&state.db)
+    // Загружаем автора через сервис
+    let author = PostService::get_post_author(&state.db, post.id)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("DB error: {}", e)))?;
 
-    // Загружаем категории через сервис (many-to-many)
+    // Загружаем категории через сервис
     let categories = PostService::get_post_categories(&state.db, post.id)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("DB error: {}", e)))?;
 
-    // Загружаем теги через сервис (many-to-many)
+    // Загружаем теги через сервис
     let tags = PostService::get_post_tags(&state.db, post.id)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("DB error: {}", e)))?;
@@ -222,11 +218,12 @@ pub async fn update_post(
 
     let mut post_active: post::ActiveModel = existing_post.clone().into();
 
+    // ✅ ИСПРАВЛЕНИЕ: клонируем title перед использованием
     if let Some(title) = payload.title {
-        post_active.title = Set(title);
         if payload.slug.is_none() {
             post_active.slug = Set(PostService::generate_slug(&title));
         }
+        post_active.title = Set(title);
     }
 
     if let Some(slug) = payload.slug {
@@ -241,11 +238,12 @@ pub async fn update_post(
         post_active.excerpt = Set(excerpt);
     }
 
+    // ✅ ИСПРАВЛЕНИЕ: клонируем status перед использованием
     if let Some(status) = payload.status {
-        post_active.status = Set(status);
         if status == post::PostStatus::Published && existing_post.published_at.is_none() {
             post_active.published_at = Set(Some(Utc::now().naive_utc()));
         }
+        post_active.status = Set(status);
     }
 
     if let Some(featured_image) = payload.featured_image {

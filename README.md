@@ -45,6 +45,6 @@ sea-orm-cli migrate up -d /home/user/projects/cmsrust/migration
 
 ```bash
 
-cargo check 2>&1 | tee build_error.log
+cargo check 2>&1 | tee build_error.log.txt
 
 ```

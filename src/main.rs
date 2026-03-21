@@ -1,5 +1,5 @@
 // src/main.rs
-use axum::{Router, http::Method, routing::{get, post, put, delete}};
+use axum::{Router, http::Method, routing::{get, post, put }};
 use tower_http::{cors::{CorsLayer, Any}, trace::TraceLayer};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 

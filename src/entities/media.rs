@@ -7,15 +7,20 @@ use serde::{Deserialize, Serialize};
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: Uuid,
+
     pub filename: String,
     pub filepath: String,
     pub mime_type: String,
     pub size: i64,
+
     pub width: Option<i32>,
     pub height: Option<i32>,
+
     pub alt_text: Option<String>,
     pub caption: Option<String>,
+
     pub uploader_id: Uuid,
+
     #[sea_orm(column_type = "TimestampWithTimeZone")]
     pub created_at: DateTime,
 }
@@ -31,3 +36,9 @@ pub enum Relation {
 }
 
 impl ActiveModelBehavior for ActiveModel {}
+
+impl Related<super::user::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Uploader.def()
+    }
+}

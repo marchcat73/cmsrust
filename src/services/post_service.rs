@@ -2,7 +2,7 @@
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, JoinType, PaginatorTrait, QueryFilter, QueryOrder, QuerySelect, Set
 };
-use crate::entities::{post, post_category, post_tag, category, tag};
+use crate::entities::{post, post_category, post_tag, category, tag, user};
 use crate::handlers::posts::CreatePostRequest;
 use uuid::Uuid;
 use chrono::Utc;
@@ -98,6 +98,23 @@ impl PostService {
             .filter(|s| !s.is_empty())
             .collect::<Vec<_>>()
             .join("-")
+    }
+
+    pub async fn get_post_author(
+        db: &DatabaseConnection,
+        post_id: Uuid,
+    ) -> Result<Option<user::Model>, sea_orm::DbErr> {
+        user::Entity::find()
+            .join(
+                JoinType::InnerJoin,
+                post::Entity::belongs_to(user::Entity)
+                    .from(post::Column::AuthorId)
+                    .to(user::Column::Id)
+                    .into()
+            )
+            .filter(post::Column::Id.eq(post_id))
+            .one(db)
+            .await
     }
 
     pub async fn get_post_categories(

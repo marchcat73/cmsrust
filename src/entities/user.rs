@@ -44,3 +44,21 @@ pub enum UserRole {
     #[sea_orm(string_value = "author")] Author,
     #[sea_orm(string_value = "subscriber")] Subscriber,
 }
+
+impl Related<super::post::Entity> for Entity {
+    fn to() -> RelationDef {
+        super::post::Relation::Author.def()
+    }
+}
+
+impl Related<super::media::Entity> for Entity {
+    fn to() -> RelationDef {
+        super::media::Relation::Uploader.def()
+    }
+}
+
+impl Related<super::comment::Entity> for Entity {
+    fn to() -> RelationDef {
+        super::comment::Relation::Author.def()
+    }
+}

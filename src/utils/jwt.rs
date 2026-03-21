@@ -3,10 +3,10 @@ use jsonwebtoken::{EncodingKey, DecodingKey, Header, Validation, encode, decode}
 use serde::{Serialize, Deserialize};
 use chrono::{Utc, Duration};
 
-// ✅ ДОБАВИТЬ #[derive(Clone)]
+// ✅ ДОБАВИТЬ Clone в derive
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Claims {
-    pub sub: String,  // user id
+    pub sub: String,
     pub username: String,
     pub role: String,
     pub exp: usize,

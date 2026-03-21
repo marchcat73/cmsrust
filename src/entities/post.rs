@@ -59,3 +59,27 @@ pub enum CommentStatus {
     #[sea_orm(string_value = "open")] Open,
     #[sea_orm(string_value = "closed")] Closed,
 }
+
+impl Related<super::user::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Author.def()
+    }
+}
+
+impl Related<super::comment::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Comments.def()
+    }
+}
+
+impl Related<super::post_category::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::PostCategories.def()
+    }
+}
+
+impl Related<super::post_tag::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::PostTags.def()
+    }
+}

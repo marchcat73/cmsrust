@@ -5,9 +5,9 @@ edition = "2021"
 
 [dependencies]
 # Web framework
-axum = { version = "0.7", features = ["macros"] }
-tower = "0.4"
-tower-http = { version = "0.5", features = ["cors", "trace", "fs"] }
+axum = { version = "0.8.8", features = ["macros"] }
+tower = "0.5.3"
+tower-http = { version = "0.6.8", features = ["cors", "trace", "fs"] }
 hyper = "1.0"
 
 # Database & ORM
@@ -47,5 +47,5 @@ multer = "3.0"
 image = "0.25"
 
 [dev-dependencies]
-axum-test = "14.0"
-mockall = "0.12"
+axum-test = "19.1.1"
+mockall = "0.14"
