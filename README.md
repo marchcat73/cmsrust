@@ -7,6 +7,7 @@ sudo -u postgres psql
 
 CREATE USER cmsrust WITH PASSWORD 'cmsrust';
 CREATE DATABASE cmsrustdb OWNER cmsrust;
+GRANT ALL PRIVILEGES ON DATABASE cmsrustdb TO cmsrust;
 ```
 
 ```bash
