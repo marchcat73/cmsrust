@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ru">
+	<head>
+		<meta charset="UTF-8" />
+		<title>{% block title %}CMS Rust{% endblock title %}</title>
+		<!-- Подключаем стили темы -->
+		<link
+			rel="stylesheet"
+			href="/static/themes/{{ current_theme }}/style.css" />
+	</head>
+	<body>
+		<header>
+			<nav>
+				<a href="/">Главная</a>
+				{% if current_user %}
+				<span>Привет, {{ current_user.username }}!</span>
+				<a href="/admin">Админка</a>
+				{% else %}
+				<a href="/login">Войти</a>
+				{% endif %}
+			</nav>
+		</header>
+
+		<main class="container">{% block content %}{% endblock content %}</main>
+
+		<footer>
+			<p>&copy; 2026 CMS on Rust. Theme: {{ current_theme }}</p>
+		</footer>
+
+		<script src="/static/themes/{{ current_theme }}/script.js"></script>
+	</body>
+</html>

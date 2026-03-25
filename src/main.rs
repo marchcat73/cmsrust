@@ -1,6 +1,9 @@
 // src/main.rs
-use axum::{Router, http::Method, routing::{get, post, put }};
+use axum::{Router, http::Method, routing::{get, post, put }, extract::State};
 use tower_http::{cors::{CorsLayer, Any}, trace::TraceLayer};
+use tower_http::services::ServeDir;
+use tera::Tera;
+use std::sync::Arc;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 mod config;
@@ -13,11 +16,14 @@ mod entities;
 #[derive(Clone)]
 pub struct AppState {
     pub db: sea_orm::DatabaseConnection,
+    pub tera: Arc<Tera>,
+    pub current_theme: String,
     pub jwt_secret: String,
 }
 
 #[tokio::main]
 async fn main() {
+    // Логирование
     tracing_subscriber::registry()
         .with(tracing_subscriber::EnvFilter::new(
             std::env::var("RUST_LOG").unwrap_or_else(|_| "info".into()),
@@ -33,7 +39,27 @@ async fn main() {
 
     let db = config::database::connect_database(&database_url).await;
 
-    let app_state = AppState { db, jwt_secret };
+    // Инициализация Tera
+    // Ищем шаблоны в папке themes/*/templates/
+    // Для простоты пока берем одну тему "default"
+    let tera = match Tera::new("themes/default/templates/**/*.html") {
+        Ok(t) => t,
+        Err(e) => {
+            tracing::error!("Ошибка парсинга шаблонов: {}", e);
+            std::process::exit(1);
+        }
+    };
+
+    let app_state = AppState {
+        db,
+        jwt_secret,
+        tera: Arc::new(tera),
+        current_theme: "default".to_string(),
+    };
+
+    // Создаем сервис для раздачи статических файлов из папки themes/default/static
+    let static_files = ServeDir::new("themes/default/static")
+        .append_index_html_on_directories(false);
 
     let cors = CorsLayer::new()
         .allow_methods([Method::GET, Method::POST, Method::PUT, Method::DELETE])
@@ -41,6 +67,7 @@ async fn main() {
         .allow_origin(Any);
 
     let app = Router::new()
+        // API роуты
         .route("/health", get(|| async { "OK" }))
         // Публичные маршруты
         .route("/api/posts", get(handlers::posts::list_posts))
@@ -50,6 +77,14 @@ async fn main() {
         .route("/api/posts", post(handlers::posts::create_post))
         .route("/api/posts/{id}", put(handlers::posts::update_post).delete(handlers::posts::delete_post))
         .route("/api/posts/{id}/restore", post(handlers::posts::restore_post))
+
+        // Веб-роуты (Рендеринг тем)
+        .route("/", get(handlers::theme::index))
+        .route("/post/{slug}", get(handlers::theme::single_post))
+
+        // Подключение статики
+        .nest_service("/static/themes/default", static_files)
+
         .layer(TraceLayer::new_for_http())
         .layer(cors)
         .with_state(app_state);

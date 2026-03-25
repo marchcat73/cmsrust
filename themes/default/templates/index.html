@@ -1,0 +1,26 @@
+{% extends "base.html" %} {% block title %}Все записи | CMS Rust{% endblock
+title %} {% block content %}
+<h1>Последние записи</h1>
+
+<div class="posts-grid">
+	{% for post in posts %}
+	<article class="post-card">
+		<h2><a href="/post/{{ post.slug }}">{{ post.title }}</a></h2>
+		<p class="meta">
+			Автор: {{ post.author_name }} | {{ post.created_at |
+			date(format="%Y-%m-%d") }}
+		</p>
+		<p>
+			{{ post.excerpt | default(value=post.content | truncate(length=150)) }}
+		</p>
+		<a href="/post/{{ post.slug }}">Читать далее &rarr;</a>
+	</article>
+	{% else %}
+	<p>Записей пока нет.</p>
+	{% endfor %}
+</div>
+
+<!-- Пагинация -->
+{% if pagination.has_next %}
+<a href="?page={{ pagination.next_page }}">Следующая страница</a>
+{% endif %} {% endblock content %}

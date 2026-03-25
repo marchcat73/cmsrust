@@ -26,9 +26,9 @@ cargo run
 # Migrations
 
 ```bash
-cargo new migrations --bin
+cargo new migration --bin
 
-cd migrations
+cd migration
 sea-orm-cli migrate generate create_users_table
 sea-orm-cli migrate generate create_posts_table
 sea-orm-cli migrate generate create_categories_table
@@ -39,6 +39,7 @@ sea-orm-cli migrate generate create_media_table
 
 
 sea-orm-cli migrate up -d /home/user/projects/cmsrust/migration
+sea-orm-cli migrate up -d /Users/pirs/Documents/www/cmsrust/migration
 
 ```
 

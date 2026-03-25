@@ -3,8 +3,8 @@ use axum::{
     extract::{Path, Query, State},
     http::{StatusCode, request::Parts},
     response::Json,
-    routing::{get, put, post},
-    Router,
+    // routing::{get, put, post},
+    // Router,
 };
 use axum::extract::FromRequestParts;
 use axum::extract::Json as AxumJson;
@@ -107,15 +107,15 @@ impl ClaimsExtractor {
 
 // ==================== Router ====================
 
-pub fn posts_router() -> Router<AppState> {
-    Router::new()
-        .route("/posts", get(list_posts))
-        .route("/posts/:id", get(get_post))
-        .route("/posts/slug/:slug", get(get_post_by_slug))
-        .route("/posts", post(create_post))
-        .route("/posts/:id", put(update_post).delete(delete_post))
-        .route("/posts/:id/restore", post(restore_post))
-}
+// pub fn posts_router() -> Router<AppState> {
+//     Router::new()
+//         .route("/posts", get(list_posts))
+//         .route("/posts/{id}", get(get_post))
+//         .route("/posts/slug/{slug}", get(get_post_by_slug))
+//         .route("/posts", post(create_post))
+//         .route("/posts/{id}", put(update_post).delete(delete_post))
+//         .route("/posts/{id}/restore", post(restore_post))
+// }
 
 // ==================== Handlers ====================
 
