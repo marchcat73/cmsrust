@@ -1,6 +1,7 @@
 // src/entities/post.rs
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
+use chrono::{DateTime, Utc};
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize)]
 #[sea_orm(table_name = "posts")]
@@ -17,12 +18,13 @@ pub struct Model {
     pub status: PostStatus,
     pub comment_status: CommentStatus,
     pub author_id: Uuid,
-    pub published_at: Option<DateTime>,
+    #[sea_orm(column_type = "TimestampWithTimeZone")]
+    pub published_at: Option<DateTime<Utc>>,
 
     #[sea_orm(column_type = "TimestampWithTimeZone")]
-    pub created_at: DateTime,
+    pub created_at: DateTime<Utc>,
     #[sea_orm(column_type = "TimestampWithTimeZone")]
-    pub updated_at: DateTime,
+    pub updated_at: DateTime<Utc>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

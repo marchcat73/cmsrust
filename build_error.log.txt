@@ -1,94 +1,21 @@
-    Checking sqlx-postgres v0.8.6
-    Checking hyper v1.8.1
-    Checking hyper-util v0.1.20
-    Checking axum v0.8.8
-    Checking sqlx v0.8.6
-    Checking sea-query-binder v0.7.0
-    Checking sea-orm v1.1.19
-    Checking sea-orm-migration v1.1.19
-    Checking cmsrust v0.1.0 (/home/user/projects/cmsrust)
-warning: field `category_id` is never read
-  --> src/handlers/posts.rs:34:9
+    Checking cmsrust v0.1.0 (/Users/pirs/Documents/www/cmsrust)
+error[E0382]: borrow of moved value: `role`
+  --> src/services/user_service.rs:87:67
    |
-29 | pub struct ListPostsQuery {
-   |            -------------- field in this struct
+56 |         role: UserRole,
+   |         ---- move occurs because `role` has type `UserRole`, which does not implement the `Copy` trait
 ...
-34 |     pub category_id: Option<Uuid>,
-   |         ^^^^^^^^^^^
-   |
-   = note: `ListPostsQuery` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
-   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
-
-warning: field `with_relations` is never read
-  --> src/handlers/posts.rs:52:9
-   |
-50 | pub struct GetPostQuery {
-   |            ------------ field in this struct
-51 |     #[serde(default)]
-52 |     pub with_relations: bool,
-   |         ^^^^^^^^^^^^^^
-   |
-   = note: `GetPostQuery` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
-
-warning: function `posts_router` is never used
-   --> src/handlers/posts.rs:110:8
-    |
-110 | pub fn posts_router() -> Router<AppState> {
-    |        ^^^^^^^^^^^^
-
-warning: function `auth_middleware` is never used
-  --> src/middleware/auth.rs:10:14
-   |
-10 | pub async fn auth_middleware(
-   |              ^^^^^^^^^^^^^^^
-
-warning: struct `CommentService` is never constructed
- --> src/services/comment_service.rs:7:12
-  |
-7 | pub struct CommentService;
-  |            ^^^^^^^^^^^^^^
-
-warning: associated function `get_comments_with_replies` is never used
-  --> src/services/comment_service.rs:11:18
-   |
- 9 | impl CommentService {
-   | ------------------- associated function in this implementation
-10 |     /// Загрузить комментарии поста с ответами
-11 |     pub async fn get_comments_with_replies(
-   |                  ^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `CommentWithReplies` is never constructed
-  --> src/services/comment_service.rs:57:12
-   |
-57 | pub struct CommentWithReplies {
-   |            ^^^^^^^^^^^^^^^^^^
-
-warning: function `create_token` is never used
-  --> src/utils/jwt.rs:15:8
-   |
-15 | pub fn create_token(user_id: String, username: String, role: String, secret: &str) -> Result<String, jsonwebtoken::errors::Error> {
-   |        ^^^^^^^^^^^^
-
-warning: function `verify_token` is never used
-  --> src/utils/jwt.rs:32:8
-   |
-32 | pub fn verify_token(token: &str, secret: &str) -> Result<Claims, jsonwebtoken::errors::Error> {
-   |        ^^^^^^^^^^^^
-
-warning: associated functions `success_with_message`, `error`, and `validation_errors` are never used
-  --> src/utils/response.rs:22:12
-   |
-12 | impl<T: Serialize> AppResponse<T> {
-   | --------------------------------- associated functions in this implementation
+79 |             role: Set(role),
+   |                       ---- value moved here
 ...
-22 |     pub fn success_with_message(data: T, message: String) -> Self {
-   |            ^^^^^^^^^^^^^^^^^^^^
-...
-31 |     pub fn error(message: String) -> Self {
-   |            ^^^^^
-...
-40 |     pub fn validation_errors(errors: Vec<String>) -> Self {
-   |            ^^^^^^^^^^^^^^^^^
+87 |         println!("✅ Пользователь создан: {} (Роль: {:?})", email, role);
+   |                                                                    ^^^^ value borrowed here after move
+   |
+   = note: this error originates in the macro `$crate::format_args_nl` which comes from the expansion of the macro `println` (in Nightly builds, run with -Z macro-backtrace for more info)
+help: consider cloning the value if the performance cost is acceptable
+   |
+79 |             role: Set(role.clone()),
+   |                           ++++++++
 
-warning: `cmsrust` (bin "cmsrust") generated 10 warnings
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 6.33s
+For more information about this error, try `rustc --explain E0382`.
+error: could not compile `cmsrust` (bin "cmsrust") due to 1 previous error

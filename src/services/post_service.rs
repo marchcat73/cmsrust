@@ -56,8 +56,8 @@ impl PostService {
             status: Set(data.status.unwrap_or(post::PostStatus::Draft)),
             author_id: Set(author_id),
             published_at: Set(None),
-            created_at: Set(Utc::now().naive_utc()),
-            updated_at: Set(Utc::now().naive_utc()),
+            created_at: Set(Utc::now()),
+            updated_at: Set(Utc::now()),
             ..Default::default()
         };
 

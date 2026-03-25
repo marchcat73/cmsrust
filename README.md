@@ -39,7 +39,7 @@ cd migration
 
 
 sea-orm-cli migrate up -d /home/{user}/projects/cmsrust/migration
-sea-orm-cli migrate up -d /Users/{user}/Documents/www/cmsrust/migration
+sea-orm-cli migrate up -d /Users/pirs/Documents/www/cmsrust/migration
 
 ```
 
@@ -49,4 +49,10 @@ sea-orm-cli migrate up -d /Users/{user}/Documents/www/cmsrust/migration
 
 cargo check 2>&1 | tee build_error.log.txt
 
+```
+
+```bash
+curl -X POST http://localhost:8000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email": "admin@example.com", "password": "StrongPassword123!"}'
 ```

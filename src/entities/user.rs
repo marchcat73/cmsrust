@@ -1,3 +1,4 @@
+use chrono::{DateTime, Utc};
 // src/entities/user.rs
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -7,21 +8,33 @@ use serde::{Deserialize, Serialize};
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: Uuid,
+
     #[sea_orm(unique)]
     pub username: String,
+
     #[sea_orm(unique)]
     pub email: String,
+
     pub password_hash: String,
+
     pub display_name: Option<String>,
     pub bio: Option<String>,
     pub avatar_url: Option<String>,
+
     pub role: UserRole,
     pub is_active: bool,
-    pub last_login: Option<DateTime>,
+
+    // ✅ ИСПРАВЛЕНИЕ: Добавлен атрибут column_type
     #[sea_orm(column_type = "TimestampWithTimeZone")]
-    pub created_at: DateTime,
+    pub last_login: Option<DateTime<Utc>>,
+
+    // ✅ ИСПРАВЛЕНИЕ: Добавлен атрибут column_type
     #[sea_orm(column_type = "TimestampWithTimeZone")]
-    pub updated_at: DateTime,
+    pub created_at: DateTime<Utc>,
+
+    // ✅ ИСПРАВЛЕНИЕ: Добавлен атрибут column_type
+    #[sea_orm(column_type = "TimestampWithTimeZone")]
+    pub updated_at: DateTime<Utc>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
@@ -39,26 +52,12 @@ impl ActiveModelBehavior for ActiveModel {}
 #[derive(Debug, Clone, PartialEq, EnumIter, DeriveActiveEnum, Serialize, Deserialize)]
 #[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "user_role")]
 pub enum UserRole {
-    #[sea_orm(string_value = "admin")] Admin,
-    #[sea_orm(string_value = "editor")] Editor,
-    #[sea_orm(string_value = "author")] Author,
-    #[sea_orm(string_value = "subscriber")] Subscriber,
-}
-
-impl Related<super::post::Entity> for Entity {
-    fn to() -> RelationDef {
-        super::post::Relation::Author.def()
-    }
-}
-
-impl Related<super::media::Entity> for Entity {
-    fn to() -> RelationDef {
-        super::media::Relation::Uploader.def()
-    }
-}
-
-impl Related<super::comment::Entity> for Entity {
-    fn to() -> RelationDef {
-        super::comment::Relation::Author.def()
-    }
+    #[sea_orm(string_value = "admin")]
+    Admin,
+    #[sea_orm(string_value = "editor")]
+    Editor,
+    #[sea_orm(string_value = "author")]
+    Author,
+    #[sea_orm(string_value = "subscriber")]
+    Subscriber,
 }

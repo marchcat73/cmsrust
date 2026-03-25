@@ -1,10 +1,13 @@
 // src/main.rs
-use axum::{Router, http::Method, routing::{get, post, put }, extract::State};
+use axum::{Router, http::Method, routing::{get, post, put }};
 use tower_http::{cors::{CorsLayer, Any}, trace::TraceLayer};
 use tower_http::services::ServeDir;
 use tera::Tera;
 use std::sync::Arc;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+use sea_orm::{ColumnTrait, EntityTrait, PaginatorTrait, QueryFilter};
+use crate::entities::user::{self, Entity, UserRole};
+use crate::services::user_service::UserService;
 
 mod config;
 mod handlers;
@@ -39,6 +42,7 @@ async fn main() {
 
     let db = config::database::connect_database(&database_url).await;
 
+
     // Инициализация Tera
     // Ищем шаблоны в папке themes/*/templates/
     // Для простоты пока берем одну тему "default"
@@ -49,6 +53,8 @@ async fn main() {
             std::process::exit(1);
         }
     };
+
+    ensure_admin_user(&db).await;
 
     let app_state = AppState {
         db,
@@ -73,6 +79,9 @@ async fn main() {
         .route("/api/posts", get(handlers::posts::list_posts))
         .route("/api/posts/{id}", get(handlers::posts::get_post))
         .route("/api/posts/slug/{slug}", get(handlers::posts::get_post_by_slug))
+        // Авторизация
+        .route("/api/auth/login", post(handlers::auth::login))
+        .route("/api/auth/register", post(handlers::auth::register))
         // Защищённые маршруты
         .route("/api/posts", post(handlers::posts::create_post))
         .route("/api/posts/{id}", put(handlers::posts::update_post).delete(handlers::posts::delete_post))
@@ -97,4 +106,35 @@ async fn main() {
     tracing::info!("🚀 CMS server running on http://localhost:{}", port);
 
     axum::serve(listener, app).await.unwrap();
+}
+
+/// Гарантирует существование хотя бы одного администратора
+async fn ensure_admin_user(db: &sea_orm::DatabaseConnection) {
+    // Проверяем, есть ли вообще хоть один админ
+    let admin_count = Entity::find()
+        .filter(user::Column::Role.eq(UserRole::Admin))
+        .count(db)
+        .await
+        .expect("Failed to count admins");
+
+    if admin_count == 0 {
+        println!("⚠️ Администраторы не найдены. Создаем первого...");
+
+        let username = std::env::var("ADMIN_USERNAME").unwrap_or_else(|_| "admin".to_string());
+        let email = std::env::var("ADMIN_EMAIL").unwrap_or_else(|_| "admin@example.com".to_string());
+        let password = std::env::var("ADMIN_PASSWORD").unwrap_or_else(|_| "admin123".to_string());
+
+        match UserService::create_user_if_not_exists(
+            db,
+            &username,
+            &email,
+            &password,
+            UserRole::Admin,
+        ).await {
+            Ok(_) => println!("🎉 Администратор успешно создан!"),
+            Err(e) => eprintln!("❌ Ошибка создания админа: {}", e),
+        }
+    } else {
+        println!("✅ Администраторы уже существуют (найдено: {})", admin_count);
+    }
 }

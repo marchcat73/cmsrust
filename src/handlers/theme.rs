@@ -3,9 +3,9 @@ use axum::{
     response::{Html, IntoResponse},
     http::StatusCode,
 };
-use serde_json::json;
+// use serde_json::json;
 use tera::Context;
-use uuid::Uuid;
+// use uuid::Uuid;
 
 use crate::{AppState, entities::{post, user}};
 use sea_orm::{EntityTrait, ColumnTrait, QueryFilter, QuerySelect, QueryOrder};

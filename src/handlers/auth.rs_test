@@ -1,0 +1,120 @@
+// src/handlers/auth.rs
+use axum::{
+    extract::State,
+    http::StatusCode,
+    response::Json,
+};
+use serde::{Deserialize, Serialize};
+use crate::{
+    AppState,
+    services::user_service::UserService,
+    utils::{jwt, response::AppResponse},
+    entities::user,
+};
+
+#[derive(Debug, Deserialize)]
+pub struct LoginRequest {
+    pub email: String,
+    pub password: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct LoginResponse {
+    pub token: String,
+    pub user: UserInfo,
+}
+
+#[derive(Debug, Serialize)]
+pub struct UserInfo {
+    pub id: String,
+    pub username: String,
+    pub email: String,
+    pub role: String,
+}
+
+// src/handlers/auth.rs
+pub async fn login(
+    State(state): State<AppState>,
+    Json(payload): Json<LoginRequest>,
+) -> Result<Json<AppResponse<LoginResponse>>, (StatusCode, String)> {
+
+    println!("📥 Попытка входа: email={}, password={}", payload.email, payload.password);
+
+    // Получаем пользователя вручную, чтобы отладить
+    use sea_orm::{EntityTrait, ColumnTrait, QueryFilter};
+    let user_model = crate::entities::user::Entity::find()
+        .filter(crate::entities::user::Column::Email.eq(&payload.email))
+        .one(&state.db)
+        .await
+        .map_err(|e| {
+            eprintln!("❌ Ошибка БД: {}", e);
+            (StatusCode::INTERNAL_SERVER_ERROR, "DB error".to_string())
+        })?;
+
+    match user_model {
+        Some(user) => {
+            println!("👤 Пользователь найден. Хеш в БД: {}", user.password_hash);
+
+            // Проверяем пароль вручную
+            let is_valid = crate::services::user_service::UserService::verify_password(&payload.password, &user.password_hash);
+
+            if !is_valid {
+                eprintln!("❌ Пароль НЕ подошел к хешу!");
+                // Для отладки: попробуем захешировать введенный пароль тем же методом и сравнить строки (опционально)
+            }
+
+            if !is_valid {
+                return Err((StatusCode::UNAUTHORIZED, "Invalid email or password".to_string()));
+            }
+
+            // Генерация токена...
+            let token = jwt::create_token(
+                user.id.to_string(),
+                user.username.clone(),
+                format!("{:?}", user.role),
+                &state.jwt_secret,
+            )
+            .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Token generation failed".to_string()))?;
+
+            Ok(Json(AppResponse::success(LoginResponse {
+                token,
+                user: UserInfo {
+                    id: user.id.to_string(),
+                    username: user.username,
+                    email: user.email,
+                    role: format!("{:?}", user.role),
+                },
+            })))
+        },
+        None => {
+            eprintln!("❌ Пользователь с таким email не найден");
+            Err((StatusCode::UNAUTHORIZED, "Invalid email or password".to_string()))
+        }
+    }
+}
+
+// Опционально: Регистрация нового пользователя (обычно только Subscriber)
+#[derive(Debug, Deserialize)]
+pub struct RegisterRequest {
+    pub username: String,
+    pub email: String,
+    pub password: String,
+}
+
+pub async fn register(
+    State(state): State<AppState>,
+    Json(payload): Json<RegisterRequest>,
+) -> Result<(StatusCode, Json<AppResponse<user::Model>>), (StatusCode, String)> {
+    // Простая валидация можно добавить здесь
+
+    match UserService::create_user_if_not_exists(
+        &state.db,
+        &payload.username,
+        &payload.email,
+        &payload.password,
+        user::UserRole::Subscriber, // Новые пользователи всегда подписчики
+    ).await {
+        Ok(user) => Ok((StatusCode::CREATED, Json(AppResponse::success(user)))),
+        Err(_) => Err((StatusCode::CONFLICT, "User already exists".to_string())),
+    }
+}

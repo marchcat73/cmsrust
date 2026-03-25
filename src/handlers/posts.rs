@@ -3,8 +3,6 @@ use axum::{
     extract::{Path, Query, State},
     http::{StatusCode, request::Parts},
     response::Json,
-    // routing::{get, put, post},
-    // Router,
 };
 use axum::extract::FromRequestParts;
 use axum::extract::Json as AxumJson;
@@ -104,18 +102,6 @@ impl ClaimsExtractor {
         Uuid::parse_str(&self.0.sub).unwrap_or_else(|_| Uuid::new_v4())
     }
 }
-
-// ==================== Router ====================
-
-// pub fn posts_router() -> Router<AppState> {
-//     Router::new()
-//         .route("/posts", get(list_posts))
-//         .route("/posts/{id}", get(get_post))
-//         .route("/posts/slug/{slug}", get(get_post_by_slug))
-//         .route("/posts", post(create_post))
-//         .route("/posts/{id}", put(update_post).delete(delete_post))
-//         .route("/posts/{id}/restore", post(restore_post))
-// }
 
 // ==================== Handlers ====================
 
@@ -241,7 +227,7 @@ pub async fn update_post(
     // ✅ ИСПРАВЛЕНИЕ: клонируем status перед использованием
     if let Some(status) = payload.status {
         if status == post::PostStatus::Published && existing_post.published_at.is_none() {
-            post_active.published_at = Set(Some(Utc::now().naive_utc()));
+            post_active.published_at = Set(Some(Utc::now()));
         }
         post_active.status = Set(status);
     }
@@ -255,10 +241,10 @@ pub async fn update_post(
     }
 
     if let Some(published_at) = payload.published_at {
-        post_active.published_at = Set(published_at.map(|dt| dt.naive_utc()));
+        post_active.published_at = Set(published_at.map(|dt| dt));
     }
 
-    post_active.updated_at = Set(Utc::now().naive_utc());
+    post_active.updated_at = Set(Utc::now());
 
     let updated_post = post_active
         .update(&state.db)
@@ -339,7 +325,7 @@ pub async fn delete_post(
     } else {
         let mut post_active: post::ActiveModel = existing_post.into();
         post_active.status = Set(post::PostStatus::Trash);
-        post_active.updated_at = Set(Utc::now().naive_utc());
+        post_active.updated_at = Set(Utc::now());
 
         post_active
             .update(&state.db)
@@ -371,7 +357,7 @@ pub async fn restore_post(
 
     let mut post_active: post::ActiveModel = existing_post.into();
     post_active.status = Set(post::PostStatus::Draft);
-    post_active.updated_at = Set(Utc::now().naive_utc());
+    post_active.updated_at = Set(Utc::now());
 
     let restored = post_active
         .update(&state.db)
