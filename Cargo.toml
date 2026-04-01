@@ -13,14 +13,14 @@ hyper = "1.0"
 tera = "1.19"
 
 # Database & ORM
-sea-orm = { version = "1.0", features = [
+sea-orm = { version = "1.1.20", features = [
     "sqlx-postgres",
     "runtime-tokio-native-tls",
     "macros",
     "with-chrono",
     "with-uuid"
 ] }
-sea-orm-migration = "1.0"
+sea-orm-migration = "1.1.20"
 
 # Async runtime
 tokio = { version = "1", features = ["full"] }

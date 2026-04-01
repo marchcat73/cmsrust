@@ -5,9 +5,24 @@
 ```bash
 sudo -u postgres psql
 
-CREATE USER cmsrust WITH PASSWORD 'cmsrust';
+CREATE USER cmsrust WITH PASSWORD 'dev_password';
 CREATE DATABASE cmsrustdb OWNER cmsrust;
 GRANT ALL PRIVILEGES ON DATABASE cmsrustdb TO cmsrust;
+```
+
+## Use Podman
+
+```sh
+podman-compose up -d
+
+# check
+podman ps -a
+# start
+podman start cmsrust_postgres_1
+# Очистка
+podman stop cmsrust_postgres_1
+podman rm cmsrust_postgres_1
+podman-compose down --volumes --rmi all
 ```
 
 ```bash
@@ -39,7 +54,7 @@ cd migration
 
 
 sea-orm-cli migrate up -d /home/{user}/projects/cmsrust/migration
-sea-orm-cli migrate up -d /Users/pirs/Documents/www/cmsrust/migration
+sea-orm-cli migrate up -d ./migration
 
 ```
 
@@ -54,5 +69,5 @@ cargo check 2>&1 | tee build_error.log.txt
 ```bash
 curl -X POST http://localhost:8000/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email": "admin@example.com", "password": "StrongPassword123!"}'
+  -d '{"email":"admin@example.com", "password":"StrongPassword123!"}'
 ```

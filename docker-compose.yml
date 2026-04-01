@@ -1,0 +1,21 @@
+version: "3.8"
+services:
+  postgres:
+    image: pgvector/pgvector:pg16 # Официальный образ с pgvector
+    environment:
+      POSTGRES_USER: cmsrust
+      POSTGRES_PASSWORD: dev_password
+      POSTGRES_DB: cmsrust
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./public:/app/public
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cmsrust"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pg_data:
