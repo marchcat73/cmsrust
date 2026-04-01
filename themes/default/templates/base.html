@@ -4,9 +4,28 @@
 		<meta charset="UTF-8" />
 		<title>{% block title %}CMS Rust{% endblock title %}</title>
 		<!-- Подключаем стили темы -->
+		{% block styles %}
 		<link
 			rel="stylesheet"
 			href="/static/themes/{{ current_theme }}/style.css" />
+		{% endblock styles %}
+		<link
+			rel="apple-touch-icon"
+			sizes="180x180"
+			href="/static/themes/{{ current_theme }}/apple-touch-icon.png" />
+		<link
+			rel="icon"
+			type="image/png"
+			sizes="32x32"
+			href="/static/themes/{{ current_theme }}/favicon-32x32.png" />
+		<link
+			rel="icon"
+			type="image/png"
+			sizes="16x16"
+			href="/static/themes/{{ current_theme }}/favicon-16x16.png" />
+		<link
+			rel="manifest"
+			href="/static/themes/{{ current_theme }}/site.webmanifest" />
 	</head>
 	<body>
 		<header>

@@ -1,5 +1,12 @@
 {% extends "base.html" %} {% block title %}Вход в систему | CMS Rust{% endblock
-title %} {% block content %}
+title %} {% block content %} {% block styles %}
+<link
+	rel="stylesheet"
+	href="/static/themes/{{ current_theme }}/style.css" />
+<link
+	rel="stylesheet"
+	href="/static/themes/{{ current_theme }}/login.css" />
+{% endblock styles %}
 <div class="auth-container">
 	<div class="auth-card">
 		<h2>Вход</h2>
