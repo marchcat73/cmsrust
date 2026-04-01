@@ -1,0 +1,17 @@
+let public_routes = Router::new()
+        .route("/health", get(|| async { "OK" }))
+        .route("/api/auth/login", post(handlers::auth::login))
+        .route("/api/auth/register", post(handlers::auth::register))
+        .route("/api/posts", get(handlers::posts::list_posts))
+        .route("/api/posts/:id", get(handlers::posts::get_post))
+        .route("/api/posts/slug/:slug", get(handlers::posts::get_post_by_slug));
+
+    let protected_routes = Router::new()
+        .route("/api/posts", post(handlers::posts::create_post))
+        .route("/api/posts/:id", put(handlers::posts::update_post).delete(handlers::posts::delete_post))
+        .route("/api/media", post(handlers::media::upload))
+        .route("/api/users/me", get(handlers::users::get_current));
+
+    let admin_routes = Router::new()
+        .route("/api/users", get(handlers::users::list_users))
+        .route("/api/settings", get(handlers::settings::get).put(handlers::settings::update));

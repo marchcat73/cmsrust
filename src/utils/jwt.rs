@@ -19,7 +19,7 @@ pub fn create_token(user_id: String, username: String, role: String, secret: &st
         sub: user_id,
         username,
         role,
-        exp: expiration.timestamp() as usize,
+        exp: expiration.and_utc().timestamp() as usize,
     };
 
     encode(

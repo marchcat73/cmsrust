@@ -8,7 +8,11 @@ edition = "2024"
 axum = { version = "0.8.8", features = ["macros"] }
 tower = "0.5.3"
 tower-http = { version = "0.6.8", features = ["cors", "trace", "fs"] }
+tower-cookies = { version = "0.11.0", features = ["private"] }
+axum-extra = { version = "0.12.2", features = ["cookie"] }
+cookie = "0.18"
 hyper = "1.0"
+futures = "0.3"
 
 tera = "1.19"
 

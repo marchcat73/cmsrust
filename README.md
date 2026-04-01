@@ -71,3 +71,26 @@ curl -X POST http://localhost:8000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"admin@example.com", "password":"StrongPassword123!"}'
 ```
+
+{"success":true,"message":null,"data":{"token":"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI1MThhNWM1My0xY2UwLTRmYjQtYWU5YS02MTRlZjFmOThiMmQiLCJ1c2VybmFtZSI6ImFkbWluIiwicm9sZSI6IkFkbWluIiwiZXhwIjoxNzc1MTE2NjIwfQ.MX112wITdDwhOk7xuyi5Mi8mj9tF68JgvT0yVV_ohO8","user":{"id":"518a5c53-1ce0-4fb4-ae9a-614ef1f98b2d","username":"admin","email":"admin@example.com","role":"Admin"}},"errors":null}
+
+```bash
+curl -X POST http://localhost:8000/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"username":"TestUser", "email":"user@example.com", "password":"StrongPassword1234!"}'
+```
+
+{"success":true,"message":null,"data":{"id":"addd63e0-af33-412b-9403-5413fd617089","username":"TestUser","email":"user@example.com","password_hash":"$argon2id$v=19$m=19456,t=2,p=1$WShNo9Vh7qHITn58Q90f9w$7zPh/T5wqDibXlQQeFYGCoJ7LUMXmxGFQCo041iO9AA","display_name":"TestUser","bio":null,"avatar_url":null,"role":"Subscriber","is_active":true,"last_login":null,"created_at":"2026-04-01T08:30:03.142493Z","updated_at":"2026-04-01T08:30:03.142496Z"},"errors":null}
+
+```bash
+curl -X POST http://localhost:8000/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"username":"TestUser", "email":"user@example.com", "password":"StrongPassword1234!"}'
+```
+
+## Auth
+
+```sh
+# Сгенерировать ключ COOKIE_SECRET_KEY в терминале (Linux/Mac):
+openssl rand -base64 32
+```

@@ -87,3 +87,31 @@ pub async fn single_post(
         }
     }
 }
+
+/// Страница входа
+pub async fn login_page(State(state): State<AppState>) -> impl IntoResponse {
+    let mut context = Context::new();
+    context.insert("current_theme", &state.current_theme);
+
+    match state.tera.render("login.html", &context) {
+        Ok(body) => Html(body).into_response(),
+        Err(e) => {
+            tracing::error!("Ошибка рендеринга login: {}", e);
+            (StatusCode::INTERNAL_SERVER_ERROR, "Ошибка шаблона").into_response()
+        }
+    }
+}
+
+/// Страница регистрации
+pub async fn register_page(State(state): State<AppState>) -> impl IntoResponse {
+    let mut context = Context::new();
+    context.insert("current_theme", &state.current_theme);
+
+    match state.tera.render("register.html", &context) {
+        Ok(body) => Html(body).into_response(),
+        Err(e) => {
+            tracing::error!("Ошибка рендеринга register: {}", e);
+            (StatusCode::INTERNAL_SERVER_ERROR, "Ошибка шаблона").into_response()
+        }
+    }
+}
