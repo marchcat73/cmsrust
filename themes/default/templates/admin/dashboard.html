@@ -1,0 +1,87 @@
+{% extends "admin/base.html" %} {% block title %}Управление постами{% endblock
+%} {% block content %}
+<div
+	style="
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 20px;
+	">
+	<h1>Все посты</h1>
+	<a
+		href="/admin/posts/create"
+		class="btn btn-primary"
+		>+ Новый пост</a
+	>
+</div>
+
+<div class="card">
+	<table>
+		<thead>
+			<tr>
+				<th>ID</th>
+				<th>Заголовок</th>
+				<th>Автор</th>
+				<th>Статус</th>
+				<th>Дата</th>
+				<th>Действия</th>
+			</tr>
+		</thead>
+		<tbody>
+			{% for post in posts %}
+			<tr>
+				<td>{{ post.id }}</td>
+				<td><strong>{{ post.title }}</strong></td>
+				<td>{{ post.author_name | default(value="Unknown") }}</td>
+				<td>
+					<span class="status-badge status-{{ post.status | lower }}">
+						{{ post.status }}
+					</span>
+				</td>
+				<td>{{ post.created_at | date(format="%Y-%m-%d") }}</td>
+				<td>
+					<a
+						href="/post/{{ post.slug }}"
+						target="_blank"
+						class="btn btn-warning"
+						style="font-size: 0.8rem"
+						>👁️</a
+					>
+
+					{% if post.status != 'trash' %}
+					<a
+						href="/admin/posts/edit/{{ post.id }}"
+						class="btn btn-primary"
+						style="font-size: 0.8rem"
+						>✏️</a
+					>
+					<button
+						onclick="deletePost('{{ post.id }}')"
+						class="btn btn-danger"
+						style="font-size: 0.8rem">
+						🗑️
+					</button>
+					{% else %}
+					<button
+						onclick="restorePost('{{ post.id }}')"
+						class="btn btn-success"
+						style="font-size: 0.8rem">
+						↩️ Восстановить
+					</button>
+					<!-- Кнопка полного удаления может быть добавлена здесь -->
+					{% endif %}
+				</td>
+			</tr>
+			{% else %}
+			<tr>
+				<td
+					colspan="6"
+					style="text-align: center; color: #7f8c8d">
+					Постов пока нет. Создайте первый!
+				</td>
+			</tr>
+			{% endfor %}
+		</tbody>
+	</table>
+</div>
+{% endblock %}

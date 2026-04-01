@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="ru">
+	<head>
+		<meta charset="UTF-8" />
+		<title>{% block title %}Админ-панель{% endblock %} | CMS Rust</title>
+		<link
+			rel="stylesheet"
+			href="/static/themes/{{ current_theme }}/style.css" />
+		<link
+			rel="stylesheet"
+			href="/static/themes/{{ current_theme }}/admin/base.css" />
+	</head>
+	<body>
+		<div class="admin-layout">
+			<!-- Боковое меню -->
+			<aside class="sidebar">
+				<h2>CMS Rust Admin</h2>
+				<nav>
+					<a href="/admin/dashboard">📊 Посты</a>
+					<a href="#">📁 Категории</a>
+					<a href="#">🏷️ Теги</a>
+					<a href="#">👥 Пользователи</a>
+					<a
+						href="#"
+						onclick="logout()"
+						>🚪 Выйти</a
+					>
+				</nav>
+				<div style="margin-top: 20px; font-size: 0.8rem; color: #95a5a6">
+					Пользователь: {{ user.username }}<br />
+					Роль: {{ user.role }}
+				</div>
+			</aside>
+
+			<!-- Основной контент -->
+			<main class="main-content">{% block content %}{% endblock %}</main>
+		</div>
+
+		<script>
+			// Функция выхода
+			async function logout() {
+				await fetch("/api/auth/logout", { method: "POST" })
+				window.location.href = "/login"
+			}
+
+			// Функция удаления поста (мягкое удаление)
+			async function deletePost(id) {
+				if (!confirm("Вы уверены? Пост будет перемещен в корзину.")) return
+
+				const res = await fetch(`/api/posts/${id}`, { method: "DELETE" })
+				if (res.ok) location.reload()
+				else alert("Ошибка при удалении")
+			}
+
+			// Функция восстановления поста
+			async function restorePost(id) {
+				const res = await fetch(`/api/posts/${id}/restore`, { method: "POST" })
+				if (res.ok) location.reload()
+				else alert("Ошибка при восстановлении")
+			}
+
+			// Функция полного удаления (только для админа, опционально)
+			async function hardDelete(id) {
+				if (
+					!confirm(
+						"ВНИМАНИЕ: Это удалит пост навсегда без возможности восстановления!"
+					)
+				)
+					return
+				// Пока используем тот же эндпоинт, но в реальности нужен отдельный или флаг
+				// Для простоты пока оставим мягкое удаление
+				deletePost(id)
+			}
+		</script>
+		{% block scripts %}{% endblock %}
+	</body>
+</html>

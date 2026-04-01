@@ -126,8 +126,12 @@ async fn main() {
         .route("/api/posts", post(handlers::posts::create_post))
         .route("/api/posts/{id}", put(handlers::posts::update_post).delete(handlers::posts::delete_post))
         .route("/api/posts/{id}/restore", post(handlers::posts::restore_post))
+        // Страницы Админки
+        .route("/admin/dashboard", get(handlers::admin::dashboard))
+        .route("/admin/posts/create", get(handlers::admin::create_post_page))
+        .route("/admin/posts/edit/{id}", get(handlers::admin::edit_post_page))
         // Слой кук (если используете) должен быть самым внешним или перед auth_middleware внутри protected_routes
-        .layer(CookieManagerLayer::new())
+
         // Применяем middleware ТОЛЬКО к этому роутеру
         .layer(from_fn_with_state(app_state.clone(), middleware::auth::auth_middleware));
 
@@ -135,6 +139,7 @@ async fn main() {
     // Важно: порядок не имеет значения для merge, но логически мы сливаем их в один
     let app = public_routes
         .merge(protected_routes)
+        .layer(CookieManagerLayer::new())
         .layer(cors)
         // Подключение статики
         .nest_service("/static/themes/default", static_files)

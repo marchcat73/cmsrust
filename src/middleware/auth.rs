@@ -1,12 +1,11 @@
 // src/middleware/auth.rs
 use axum::{
-    extract::{Request, State, Extension},
+    extract::{Request, State},
     middleware::Next,
-    response::Response,
+    response::{Response, IntoResponse, Redirect},
     http::{StatusCode},
 };
 use tower_cookies::Cookies;
-use cookie::Cookie;
 use sea_orm::{ColumnTrait, EntityTrait, PaginatorTrait, QueryFilter};
 use crate::entities::user::{self, Entity, UserRole};
 use crate::services::user_service::UserService;
@@ -45,59 +44,7 @@ pub async fn ensure_admin_user(db: &sea_orm::DatabaseConnection) {
     }
 }
 
-/// Middleware-обертка для защищенных хендлеров
-/// Принимает хендлер и возвращает новый хендлер, который сначала проверяет авторизацию
-pub fn require_auth<H, T, S>(handler: H) -> impl Fn(State<AppState>, Extension<Cookies>, Request) -> std::pin::Pin<Box<dyn futures::Future<Output = Result<Response, StatusCode>> + Send>>
-where
-    H: axum::handler::Handler<T, S> + Clone + Send + 'static,
-    T: 'static,
-    S: Send + Sync + 'static,
-{
-    move |state, Extension(cookies), request| {
-        let handler = handler.clone();
-        let state = state.clone();
 
-        Box::pin(async move {
-            // 1. Пытаемся получить токен из куки
-            let token = cookies
-                .get(std::env::var("AUTH_COOKIE_NAME").unwrap_or_else(|_| "cms_auth_token".to_string()).as_str())
-                .and_then(|c| Some(c.value().to_string()));
-
-            match token {
-                Some(token_str) => {
-                    // 2. Верифицируем JWT
-                    match jwt::verify_token(&token_str, &state.jwt_secret) {
-                        Ok(claims) => {
-                            // 3. Добавляем Claims в Extensions, чтобы хендлер мог их взять
-                            let mut request = request;
-                            request.extensions_mut().insert(claims);
-
-                            // 4. Вызываем оригинальный хендлер
-                            // Примечание: Для упрощения здесь используется прямой вызов,
-                            // но в реальном проекте лучше использовать axum::middleware::from_fn_with_state
-                            // и отдельную функцию проверки.
-                            // Ниже приведен более правильный вариант через from_fn.
-
-                            // Так как синтаксис обертки хендлера сложен,
-                            // давайте используем стандартный подход axum::middleware::from_fn_with_state
-                            // См. обновленный main.rs ниже для правильного подключения.
-                            Ok(Response::new(axum::body::Body::empty())) // Заглушка, см. ниже правильный код
-                        }
-                        Err(_) => {
-                            warn!("Invalid token in cookie");
-                            Err(StatusCode::UNAUTHORIZED)
-                        }
-                    }
-                }
-                None => Err(StatusCode::UNAUTHORIZED),
-            }
-        })
-    }
-}
-
-// --- ПРАВИЛЬНЫЙ ПОДХОД ЧЕРЕЗ from_fn ---
-
-use axum::middleware::from_fn_with_state;
 
 /// Функция проверки, используемая внутри middleware
 pub async fn auth_middleware(
@@ -127,7 +74,23 @@ pub async fn auth_middleware(
                 }
             }
         }
-        None => Err(StatusCode::UNAUTHORIZED),
+        None => {
+            // Проверяем, ждет ли клиент HTML (страница админки) или JSON (API)
+            let accepts_html = request
+                .headers()
+                .get(axum::http::header::ACCEPT)
+                .and_then(|v| v.to_str().ok())
+                .map(|s| s.contains("text/html"))
+                .unwrap_or(false);
+
+            if accepts_html {
+                // Редирект на логин для браузера
+                Ok(Redirect::to("/login").into_response())
+            } else {
+                // 401 для API
+                Err(StatusCode::UNAUTHORIZED)
+            }
+        },
     }
 }
 

@@ -1,0 +1,170 @@
+{% extends "admin/base.html" %} {% block title %} {% if is_edit
+%}Редактирование{% else %}Создание{% endif %} поста {% endblock %} {% block
+content %}
+<h1>{%if is_edit %} Редактировать пост {% else %} Новый пост {% endif %}</h1>
+
+<div class="card">
+	<form id="post-form">
+		<div style="margin-bottom: 15px">
+			<label style="display: block; margin-bottom: 5px; font-weight: bold"
+				>Заголовок</label
+			>
+			<input
+				type="text"
+				id="title"
+				name="title"
+				value="{{ post.title | default(value='') }}"
+				required
+				style="
+					width: 100%;
+					padding: 10px;
+					border: 1px solid #ddd;
+					border-radius: 4px;
+				" />
+		</div>
+		<div style="margin-bottom: 15px">
+			<label style="display: block; margin-bottom: 5px; font-weight: bold"
+				>Slug (URL)</label
+			>
+			<input
+				type="text"
+				id="slug"
+				name="slug"
+				value="{{ post.slug | default(value='') }}"
+				placeholder="my-awesome-post"
+				style="
+					width: 100%;
+					padding: 10px;
+					border: 1px solid #ddd;
+					border-radius: 4px;
+				" />
+			<small style="color: #7f8c8d"
+				>Оставьте пустым для автогенерации из заголовка.</small
+			>
+		</div>
+		<div style="margin-bottom: 15px">
+			<label style="display: block; margin-bottom: 5px; font-weight: bold"
+				>Статус</label
+			>
+			<select
+				id="status"
+				name="status"
+				style="
+					width: 100%;
+					padding: 10px;
+					border: 1px solid #ddd;
+					border-radius: 4px;
+				">
+				{%if post and post.status=="Draft" %}
+				<option
+					value="Draft" selected>
+					Черновик
+				</option>
+				{% endif %}
+				{%if post and post.status=="Published" %}
+				<option
+					value="Published" selected>
+					Опубликован
+				</option>
+				{% endif %}
+				{%if post and post.status=="Archived" %}
+				<option
+					value="Archived" selected>
+					Архив
+				</option>
+				{% endif %}
+				{%if not is_edit %}
+				<option
+					value="Draft">
+					Черновик
+				</option>
+				<option
+					value="Published">
+					Опубликован
+				</option>
+				<option
+					value="Archived">
+					Архив
+				</option>
+				{% endif %}
+			</select>
+		</div>
+		<div style="margin-bottom: 15px">
+			<label style="display: block; margin-bottom: 5px; font-weight: bold"
+				>Контент</label
+			>
+			<textarea
+				id="content"
+				name="content"
+				rows="15"
+				required
+				style="
+					width: 100%;
+					padding: 10px;
+					border: 1px solid #ddd;
+					border-radius: 4px;
+					font-family: monospace;
+				">
+			{{ post.content | default(value='') }}
+			</textarea
+			>
+		</div>
+		<div style="display: flex; gap: 10px">
+			<button
+				type="submit"
+				class="btn btn-success">
+				{%if is_edit %} Сохранить изменения {% else %} Опубликовать {% endif %}
+			</button>
+			<a
+				href="/admin/dashboard"
+				class="btn"
+				style="background: #95a5a6; color: white"
+				>Отмена</a
+			>
+		</div>
+	</form>
+</div>
+
+<script>
+	document
+		.getElementById("post-form")
+		.addEventListener("submit", async function (e) {
+			e.preventDefault()
+
+			const title = document.getElementById("title").value
+			const slug = document.getElementById("slug").value
+			const status = document.getElementById("status").value
+			const content = document.getElementById("content").value
+
+			const payload = { title, content, status }
+			if (slug) payload.slug = slug
+
+			const url = `{%if is_edit %}/api/posts/{{ post.id }}{% else %}/api/posts{% endif %}`
+			const method = `{%if is_edit %}PUT{% else %}POST{% endif %}`
+
+			const btn = this.querySelector('button[type="submit"]')
+			btn.disabled = true
+			btn.textContent = "Сохранение..."
+
+			try {
+				const res = await fetch(url, {
+					method: method,
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify(payload)
+				})
+
+				if (res.ok) {
+					window.location.href = "/admin/dashboard"
+				} else {
+					const err = await res.json()
+					alert("Ошибка: " + (err.message || "Не удалось сохранить"))
+					btn.disabled = false
+					btn.textContent = `{%if is_edit %}Сохранить изменения{% else %}Опубликовать{% endif %}`
+				}
+			} catch (err) {
+				alert("Ошибка сети")
+				btn.disabled = false
+			}
+		})
+</script>
+{% endblock %}
