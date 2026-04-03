@@ -79,7 +79,7 @@ title %} {% block content %} {% block styles %}
 					// Сохраняем токен
 					localStorage.setItem("cms_token", data.data.token)
 					localStorage.setItem("cms_user", JSON.stringify(data.data.user))
-
+					console.log("Login successful, token stored:", data.data.token)
 					// Перенаправляем в админку или на главную
 					window.location.href = "/admin/dashboard"
 				} else {

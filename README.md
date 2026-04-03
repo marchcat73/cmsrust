@@ -22,6 +22,7 @@ podman start cmsrust_postgres_1
 # Очистка
 podman stop cmsrust_postgres_1
 podman rm cmsrust_postgres_1
+# Полная очистка ОСТОРОЖНО!!! Удалит и другие контейнеры
 podman-compose down --volumes --rmi all
 ```
 
@@ -82,15 +83,11 @@ curl -X POST http://localhost:8000/api/auth/register \
 
 {"success":true,"message":null,"data":{"id":"addd63e0-af33-412b-9403-5413fd617089","username":"TestUser","email":"user@example.com","password_hash":"$argon2id$v=19$m=19456,t=2,p=1$WShNo9Vh7qHITn58Q90f9w$7zPh/T5wqDibXlQQeFYGCoJ7LUMXmxGFQCo041iO9AA","display_name":"TestUser","bio":null,"avatar_url":null,"role":"Subscriber","is_active":true,"last_login":null,"created_at":"2026-04-01T08:30:03.142493Z","updated_at":"2026-04-01T08:30:03.142496Z"},"errors":null}
 
-```bash
-curl -X POST http://localhost:8000/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"username":"TestUser", "email":"user@example.com", "password":"StrongPassword1234!"}'
-```
+
 
 ## Auth
 
 ```sh
 # Сгенерировать ключ COOKIE_SECRET_KEY в терминале (Linux/Mac):
-openssl rand -base64 32
+openssl rand -base64 64
 ```
