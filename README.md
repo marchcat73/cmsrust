@@ -83,7 +83,33 @@ curl -X POST http://localhost:8000/api/auth/register \
 
 {"success":true,"message":null,"data":{"id":"addd63e0-af33-412b-9403-5413fd617089","username":"TestUser","email":"user@example.com","password_hash":"$argon2id$v=19$m=19456,t=2,p=1$WShNo9Vh7qHITn58Q90f9w$7zPh/T5wqDibXlQQeFYGCoJ7LUMXmxGFQCo041iO9AA","display_name":"TestUser","bio":null,"avatar_url":null,"role":"Subscriber","is_active":true,"last_login":null,"created_at":"2026-04-01T08:30:03.142493Z","updated_at":"2026-04-01T08:30:03.142496Z"},"errors":null}
 
+```bash
+curl -X POST http://localhost:8000/api/categories \
+  -H "Content-Type: application/json" \
+  -H "Cookie: cms_auth_token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI1MThhNWM1My0xY2UwLTRmYjQtYWU5YS02MTRlZjFmOThiMmQiLCJ1c2VybmFtZSI6ImFkbWluIiwicm9sZSI6IkFkbWluIiwiZXhwIjoxNzc1MzAyNzczfQ.tmyuO4BAw9rk41uvFEHihGBze5w8XGx6mDkx28WSmFk" \
+  -d '{
+    "name": "Технологии1",
+    "slug": "tech1",
+    "description": "Все о технологиях",
+    "parent_id": null
+  }'
+```
+5afe4e3e-b57f-4336-97f0-2df0a99f1b6c
+```bash
+curl -X GET http://localhost:8000/api/categories \
+  -H "Cookie: cms_auth_token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI1MThhNWM1My0xY2UwLTRmYjQtYWU5YS02MTRlZjFmOThiMmQiLCJ1c2VybmFtZSI6ImFkbWluIiwicm9sZSI6IkFkbWluIiwiZXhwIjoxNzc1MzAyNzczfQ.tmyuO4BAw9rk41uvFEHihGBze5w8XGx6mDkx28WSmFk"
+```
 
+```bash
+# Замените UUID на реальный ID из ответа шага 1
+curl -X PUT http://localhost:8000/api/categories/5afe4e3e-b57f-4336-97f0-2df0a99f1b6c \
+  -H "Content-Type: application/json" \
+  -H "Cookie: cms_auth_token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI1MThhNWM1My0xY2UwLTRmYjQtYWU5YS02MTRlZjFmOThiMmQiLCJ1c2VybmFtZSI6ImFkbWluIiwicm9sZSI6IkFkbWluIiwiZXhwIjoxNzc1MzAyNzczfQ.tmyuO4BAw9rk41uvFEHihGBze5w8XGx6mDkx28WSmFk" \
+  -d '{
+    "name": "IT и Технологии",
+    "description": "Обновленное описание"
+  }'
+```
 
 ## Auth
 

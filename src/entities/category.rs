@@ -1,6 +1,7 @@
 // src/entities/category.rs
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
+use chrono::{DateTime, Utc};
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
 #[sea_orm(table_name = "categories")]
@@ -12,9 +13,9 @@ pub struct Model {
     pub description: Option<String>,
     pub parent_id: Option<Uuid>,
     #[sea_orm(column_type = "TimestampWithTimeZone")]
-    pub created_at: DateTime,
-    #[sea_orm(column_type = "TimestampWithTimeZone")]
-    pub updated_at: DateTime,
+        pub created_at: DateTime<Utc>,
+        #[sea_orm(column_type = "TimestampWithTimeZone")]
+    pub updated_at: DateTime<Utc>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
