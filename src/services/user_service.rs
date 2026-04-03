@@ -1,5 +1,5 @@
 // src/services/user_service.rs
-use sea_orm::{EntityTrait, ActiveModelTrait, Set, ColumnTrait, QueryFilter};
+use sea_orm::{ActiveModelTrait, ColumnTrait, DbErr, EntityTrait, QueryFilter, Set};
 use crate::entities::{user, user::UserRole};
 use uuid::Uuid;
 use chrono::Utc;
@@ -121,5 +121,43 @@ impl UserService {
         } else {
             None
         }
+    }
+
+    /// Получить пользователя по ID
+    pub async fn get_user_by_id(
+        db: &sea_orm::DatabaseConnection,
+        user_id: Uuid,
+    ) -> Result<Option<user::Model>, DbErr> {
+        user::Entity::find_by_id(user_id)
+            .one(db)
+            .await
+    }
+
+    /// Обновить профиль пользователя (имя, био, аватар)
+    pub async fn update_profile(
+        db: &sea_orm::DatabaseConnection,
+        user_id: Uuid,
+        display_name: Option<String>,
+        bio: Option<String>,
+        avatar_url: Option<String>,
+    ) -> Result<user::Model, DbErr> {
+        let user = user::Entity::find_by_id(user_id)
+            .one(db)
+            .await?
+            .ok_or(DbErr::RecordNotFound("User not found".to_string()))?;
+
+        let mut active_user: user::ActiveModel = user.into();
+
+        if let Some(name) = display_name {
+            active_user.display_name = Set(Some(name));
+        }
+        if let Some(b) = bio {
+            active_user.bio = Set(Some(b));
+        }
+        if let Some(avatar) = avatar_url {
+            active_user.avatar_url = Set(Some(avatar));
+        }
+
+        active_user.update(db).await
     }
 }

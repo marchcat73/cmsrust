@@ -15,7 +15,15 @@
 			<!-- Боковое меню -->
 			<aside class="sidebar">
 				<h2>CMS Rust Admin</h2>
+				<div class="user-info">
+			    <img id="user-avatar" src="/static/themes/{{ current_theme }}/images/default-avatar.png" alt="Avatar" style="width: 40px; border-radius: 50%;">
+			    <div>
+			        <strong id="user-display-name">Загрузка...</strong>
+			        <div id="user-role" style="font-size: 0.8em; color: #aaa;">Роль</div>
+			    </div>
+			</div>
 				<nav>
+					<a href="/admin/users/me">👤 Мой профиль</a>
 					<a href="/admin/dashboard">📊 Посты</a>
 					<a href="#">📁 Категории</a>
 					<a href="#">🏷️ Теги</a>
@@ -33,7 +41,9 @@
 			</aside>
 
 			<!-- Основной контент -->
-			<main class="main-content">{% block content %}{% endblock %}</main>
+			<main class="main-content">
+				{% block content %}{% endblock %}
+			</main>
 		</div>
 
 		<script>
@@ -71,6 +81,39 @@
 				// Для простоты пока оставим мягкое удаление
 				deletePost(id)
 			}
+
+			async function loadUserProfile() {
+			    try {
+			        // Куки отправляются браузером автоматически благодаря настройкам CORS и SameSite
+			        const response = await fetch('/api/users/me', {
+			            method: 'GET',
+			            headers: {
+			                'Accept': 'application/json'
+			            }
+			        });
+
+			        if (response.ok) {
+			            const data = await response.json();
+			            if (data.success) {
+			                const user = data.data;
+			                // Обновляем интерфейс
+			                document.getElementById('user-display-name').textContent = user.display_name || user.username;
+			                document.getElementById('user-role').textContent = user.role;
+			                if (user.avatar_url) {
+			                    document.getElementById('user-avatar').src = user.avatar_url;
+			                }
+			            }
+			        } else {
+			            // Если 401 - редирект на логин
+			            window.location.href = '/login';
+			        }
+			    } catch (error) {
+			        console.error('Error loading profile:', error);
+			    }
+			}
+
+			// Вызываем при загрузке страницы админки
+			document.addEventListener('DOMContentLoaded', loadUserProfile);
 		</script>
 		{% block scripts %}{% endblock %}
 	</body>
