@@ -133,6 +133,7 @@ async fn main() {
         // Пользователи (для админки управления юзерами)
         .route("/api/users/me", get(handlers::user::get_current_user))
         .route("/api/users/me", put(handlers::user::update_current_user))
+        .route("/admin/users/me", get(handlers::admin::profile_page))
         // Опционально: просмотр других пользователей (для админки списка юзеров)
         .route("/api/users/{id}", get(handlers::user::get_user_by_id))
         // Слой кук (если используете) должен быть самым внешним или перед auth_middleware внутри protected_routes

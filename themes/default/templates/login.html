@@ -75,11 +75,7 @@ title %} {% block content %} {% block styles %}
 
 				const data = await response.json()
 
-				if (response.ok && data.success) {
-					// Сохраняем токен
-					localStorage.setItem("cms_token", data.data.token)
-					localStorage.setItem("cms_user", JSON.stringify(data.data.user))
-					console.log("Login successful, token stored:", data.data.token)
+				if (response.ok && data.user) {
 					// Перенаправляем в админку или на главную
 					window.location.href = "/admin/dashboard"
 				} else {
