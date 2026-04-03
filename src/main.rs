@@ -126,6 +126,7 @@ async fn main() {
         .route("/api/posts", post(handlers::posts::create_post))
         .route("/api/posts/{id}", put(handlers::posts::update_post).delete(handlers::posts::delete_post))
         .route("/api/posts/{id}/restore", post(handlers::posts::restore_post))
+        .merge(handlers::category::categories_router())
         // Страницы Админки
         .route("/admin/dashboard", get(handlers::admin::dashboard))
         .route("/admin/posts/create", get(handlers::admin::create_post_page))
