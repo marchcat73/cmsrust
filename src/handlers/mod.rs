@@ -4,3 +4,4 @@ pub mod posts;
 pub mod theme;
 pub mod admin;
 pub mod user;
+pub mod media;
