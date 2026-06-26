@@ -197,3 +197,20 @@ pub async fn update_profile_api(
         }
     })))
 }
+
+pub async fn media_page(
+    State(state): State<AppState>,
+    Extension(claims): Extension<Claims>,
+) -> impl IntoResponse {
+    let mut context = Context::new();
+    context.insert("current_theme", &state.current_theme);
+    context.insert("user", &json!({
+        "username": claims.username,
+        "role": claims.role,
+    }));
+
+    match state.tera.render("admin/media.html", &context) {
+        Ok(body) => Html(body).into_response(),
+        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Html(format!("Error: {}", e))).into_response(),
+    }
+}

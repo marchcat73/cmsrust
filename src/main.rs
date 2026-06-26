@@ -80,6 +80,9 @@ async fn main() {
     let static_files = ServeDir::new("themes/default/static")
         .append_index_html_on_directories(false);
 
+    // Создаем сервис для раздачи загруженных файлов
+    let upload_files = ServeDir::new("uploads");
+
     let cors = CorsLayer::new()
         .allow_origin(AllowOrigin::predicate(|origin, _req_head| {
             // Разрешаем все локальные адреса
@@ -137,6 +140,8 @@ async fn main() {
         .route("/admin/users/me", get(handlers::admin::profile_page))
         // Опционально: просмотр других пользователей (для админки списка юзеров)
         .route("/api/users/{id}", get(handlers::user::get_user_by_id))
+        .merge(handlers::media::media_router(app_state.clone()))
+        .route("/admin/media", get(handlers::admin::media_page))
         // Слой кук (если используете) должен быть самым внешним или перед auth_middleware внутри protected_routes
 
         // Применяем middleware ТОЛЬКО к этому роутеру
@@ -150,6 +155,8 @@ async fn main() {
         .layer(cors)
         // Подключение статики
         .nest_service("/static/themes/default", static_files)
+        // Подключение загруженных файлов
+        .nest_service("/static/uploads", upload_files)
         .layer(TraceLayer::new_for_http())
         .with_state(app_state);
 

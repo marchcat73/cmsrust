@@ -1,6 +1,7 @@
 // src/entities/media.rs
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
+use chrono::{DateTime, Utc};
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
 #[sea_orm(table_name = "media")]
@@ -18,11 +19,12 @@ pub struct Model {
 
     pub alt_text: Option<String>,
     pub caption: Option<String>,
+    pub description: Option<String>,
 
     pub uploader_id: Uuid,
 
     #[sea_orm(column_type = "TimestampWithTimeZone")]
-    pub created_at: DateTime,
+    pub created_at: DateTime<Utc>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

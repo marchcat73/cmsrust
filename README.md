@@ -55,7 +55,22 @@ cd migration
 
 
 sea-orm-cli migrate up -d /home/{user}/projects/cmsrust/migration
+# or
 sea-orm-cli migrate up -d ./migration
+
+
+# Dump
+podman exec -t cmsrust_postgres_1 pg_dump -U cmsrust -d cmsrust > backup.sql
+
+# 1. Подключаемся к системной БД 'postgres' и удаляем вашу БД
+podman exec -it cmsrust_postgres_1 psql -U cmsrust -d postgres -c "DROP DATABASE IF EXISTS cmsrust;"
+
+# 2. Создаем БД заново
+podman exec -it cmsrust_postgres_1 psql -U cmsrust -d postgres -c "CREATE DATABASE cmsrust OWNER cmsrust;"
+
+# 3. Восстанавливаем дамп
+cat backup.sql | podman exec -i cmsrust_postgres_1 -U cmsrust -d cmsrust
+
 
 ```
 

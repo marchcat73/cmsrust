@@ -27,7 +27,7 @@ pub async fn ensure_admin_user(db: &sea_orm::DatabaseConnection) {
 
         let username = std::env::var("ADMIN_USERNAME").unwrap_or_else(|_| "admin".to_string());
         let email = std::env::var("ADMIN_EMAIL").unwrap_or_else(|_| "admin@example.com".to_string());
-        let password = std::env::var("ADMIN_PASSWORD").unwrap_or_else(|_| "admin123".to_string());
+        let password = std::env::var("ADMIN_PASSWORD").unwrap_or_else(|_| "StrongPassword123!".to_string());
 
         match UserService::create_user_if_not_exists(
             db,

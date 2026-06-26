@@ -1,0 +1,176 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Медиа библиотека{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <h1>Медиа библиотека</h1>
+    <label class="btn btn-primary" style="cursor: pointer;">
+        📤 Загрузить файл
+        <input type="file" id="file-upload" style="display: none;" multiple accept="image/*">
+    </label>
+</div>
+
+<!-- Сетка медиафайлов -->
+<div id="media-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px;">
+    <!-- Загружается через JavaScript -->
+</div>
+
+<!-- Модальное окно для редактирования -->
+<div id="edit-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+    <div style="background: white; padding: 20px; border-radius: 8px; max-width: 500px; margin: 50px auto;">
+        <h2>Редактировать медиа</h2>
+        <img id="edit-preview" style="max-width: 100%; margin-bottom: 15px;">
+
+        <div style="margin-bottom: 15px;">
+            <label>Alt текст</label>
+            <input type="text" id="edit-alt" style="width: 100%; padding: 8px;">
+        </div>
+
+        <div style="margin-bottom: 15px;">
+            <label>Подпись</label>
+            <input type="text" id="edit-caption" style="width: 100%; padding: 8px;">
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+            <button id="save-edit" class="btn btn-primary">Сохранить</button>
+            <button id="close-edit" class="btn" style="background: #95a5a6; color: white;">Отмена</button>
+            <button id="delete-media" class="btn btn-danger">Удалить</button>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentMediaId = null;
+
+// Загрузка списка медиа
+async function loadMedia() {
+    const res = await fetch('/media');
+    const data = await res.json();
+
+    const grid = document.getElementById('media-grid');
+    grid.innerHTML = '';
+
+    data.data.forEach(media => {
+        const card = document.createElement('div');
+        card.style.cssText = 'border: 1px solid #ddd; border-radius: 8px; overflow: hidden; cursor: pointer;';
+        card.innerHTML = `
+            <img src="${media.url}" style="width: 100%; height: 150px; object-fit: cover;" alt="${media.alt_text || ''}">
+            <div style="padding: 10px;">
+                <div style="font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${media.filename}</div>
+                <div style="font-size: 0.8em; color: #666;">${formatSize(media.size)}</div>
+            </div>
+        `;
+        card.onclick = () => openEditModal(media);
+        grid.appendChild(card);
+    });
+}
+
+// Загрузка файла
+document.getElementById('file-upload').addEventListener('change', async function(e) {
+    const files = e.target.files;
+    if (!files.length) return;
+
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (let file of files) {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const res = await fetch('/media', {
+            method: 'POST',
+            body: formData,
+            credentials: 'include',
+        });
+
+        if (!res.ok) {
+            const errorData = await res.json().catch(() => ({}));
+            const errorMsg = errorData.message || errorData.error || 'Ошибка загрузки';
+            console.error('Ошибка загрузки файла:', file.name, errorMsg, res.status);
+        } else {
+            console.log('Успешно загружен файл:', file.name);
+        }
+
+        if (res.ok) {
+            successCount++;
+        } else {
+            errorCount++;
+        }
+    }
+
+    if (errorCount === 0) {
+        alert(`Загружено файлов: ${successCount}`);
+    } else if (successCount > 0) {
+        alert(`Успешно загружено: ${successCount}, ошибок: ${errorCount}`);
+    } else {
+        alert('Не удалось загрузить файлы');
+    }
+
+    // Очищаем input для возможности повторной загрузки тех же файлов
+    e.target.value = '';
+    loadMedia();
+});
+
+// Открытие модального окна
+function openEditModal(media) {
+    currentMediaId = media.id;
+    document.getElementById('edit-preview').src = media.url;
+    document.getElementById('edit-alt').value = media.alt_text || '';
+    document.getElementById('edit-caption').value = media.caption || '';
+    document.getElementById('edit-modal').style.display = 'block';
+}
+
+// Закрытие модального окна
+document.getElementById('close-edit').onclick = () => {
+    document.getElementById('edit-modal').style.display = 'none';
+};
+
+// Сохранение изменений
+document.getElementById('save-edit').onclick = async () => {
+    const res = await fetch(`/media/${currentMediaId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            alt_text: document.getElementById('edit-alt').value,
+            caption: document.getElementById('edit-caption').value
+        }),
+        credentials: 'include',
+    });
+
+    if (res.ok) {
+        alert('Сохранено!');
+        document.getElementById('edit-modal').style.display = 'none';
+        loadMedia();
+    } else {
+        alert('Ошибка сохранения');
+    }
+};
+
+// Удаление
+document.getElementById('delete-media').onclick = async () => {
+    if (!confirm('Удалить файл?')) return;
+
+    const res = await fetch(`/media/${currentMediaId}`, {
+        method: 'DELETE'
+    });
+
+    if (res.ok) {
+        document.getElementById('edit-modal').style.display = 'none';
+        loadMedia();
+    } else {
+        alert('Ошибка удаления');
+    }
+};
+
+// Форматирование размера
+function formatSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+// Загрузка при старте
+loadMedia();
+</script>
+{% endblock %}

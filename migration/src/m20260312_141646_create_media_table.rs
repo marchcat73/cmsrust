@@ -21,6 +21,7 @@ impl MigrationTrait for Migration {
                     .col(ColumnDef::new(Media::Height).integer().null())
                     .col(ColumnDef::new(Media::AltText).string().null())
                     .col(ColumnDef::new(Media::Caption).string().null())
+                    .col(ColumnDef::new(Media::Description).string().null())
                     .col(ColumnDef::new(Media::UploaderId).uuid().not_null())
                     // ✅ created_at - ТОЛЬКО ОДИН РАЗ!
                     .col(
@@ -88,6 +89,7 @@ pub enum Media {
     Height,
     AltText,
     Caption,
+    Description,
     UploaderId,
     CreatedAt,
 }

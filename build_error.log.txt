@@ -1,84 +1,120 @@
-    Checking sea-orm v1.1.20
-    Checking sea-orm-migration v1.1.20
-    Checking cmsrust v0.1.0 (/home/user/projects/cmsrust)
-warning: use of deprecated method `chrono::NaiveDateTime::timestamp`: use `.and_utc().timestamp()` instead
-  --> src/utils/jwt.rs:22:25
+    Checking axum v0.8.8
+    Checking axum-extra v0.12.5
+    Checking cmsrust v0.1.0 (/home/marchcat/projects/cmsrust)
+warning: unused imports: `IntoResponse`, `Response`, `StatusCode`, `delete`, and `middleware as axum_middleware`
+ --> src/main.rs:3:28
+  |
+3 |     Router, http::{Method, StatusCode, header}, middleware as axum_middleware, response::{IntoResponse, Response}, routing::{delete, get, post, put}
+  |                            ^^^^^^^^^^           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^             ^^^^^^^^^^^^  ^^^^^^^^             ^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused imports: `Query`, `delete`, `post`, and `put`
+ --> src/handlers/category.rs:3:21
+  |
+3 |     extract::{Path, Query, State},
+  |                     ^^^^^
+...
+6 |     routing::{get, post, put, delete},
+  |                    ^^^^  ^^^  ^^^^^^
+
+warning: unused import: `Serialize`
+ --> src/handlers/category.rs:9:26
+  |
+9 | use serde::{Deserialize, Serialize};
+  |                          ^^^^^^^^^
+
+warning: unused import: `Extension`
+ --> src/handlers/user.rs:6:5
+  |
+6 |     Extension,
+  |     ^^^^^^^^^
+
+warning: unused import: `utils::jwt::Claims`
+  --> src/handlers/user.rs:15:5
    |
-22 |         exp: expiration.timestamp() as usize,
-   |                         ^^^^^^^^^
+15 |     utils::jwt::Claims,
+   |     ^^^^^^^^^^^^^^^^^^
+
+warning: unused imports: `delete`, `post`, and `put`
+ --> src/handlers/media.rs:6:15
+  |
+6 |     routing::{delete, get, post, put},
+  |               ^^^^^^       ^^^^  ^^^
+
+warning: unused imports: `ColumnTrait` and `TransactionTrait`
+ --> src/services/category_service.rs:3:23
+  |
+3 |     ActiveModelTrait, ColumnTrait, DbErr, EntityTrait, QueryFilter,
+  |                       ^^^^^^^^^^^
+4 |     QueryOrder, Set, TransactionTrait
+  |                      ^^^^^^^^^^^^^^^^
+
+warning: unused import: `post_category`
+ --> src/services/category_service.rs:6:33
+  |
+6 | use crate::entities::{category, post_category};
+  |                                 ^^^^^^^^^^^^^
+
+warning: use of deprecated method `cookie::CookieBuilder::<'c>::finish`: `CookieBuilder` can be passed in to methods expecting a `Cookie`; for other cases, use `CookieBuilder::build()`
+  --> src/handlers/auth.rs:61:10
+   |
+61 |         .finish();
+   |          ^^^^^^
    |
    = note: `#[warn(deprecated)]` on by default
 
-warning: field `category_id` is never read
-  --> src/handlers/posts.rs:32:9
-   |
-27 | pub struct ListPostsQuery {
-   |            -------------- field in this struct
-...
-32 |     pub category_id: Option<Uuid>,
-   |         ^^^^^^^^^^^
-   |
-   = note: `ListPostsQuery` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
-   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+warning: variable does not need to be mutable
+   --> src/handlers/admin.rs:166:9
+    |
+166 |     let mut active_user = user::Entity::find_by_id(user_id)
+    |         ----^^^^^^^^^^^
+    |         |
+    |         help: remove this `mut`
+    |
+    = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
 
-warning: field `with_relations` is never read
-  --> src/handlers/posts.rs:50:9
-   |
-48 | pub struct GetPostQuery {
-   |            ------------ field in this struct
-49 |     #[serde(default)]
-50 |     pub with_relations: bool,
-   |         ^^^^^^^^^^^^^^
-   |
-   = note: `GetPostQuery` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+error[E0061]: this function takes 1 argument but 0 arguments were supplied
+   --> src/main.rs:140:16
+    |
+140 |         .merge(handlers::media::media_router())
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-- argument #1 of type `AppState` is missing
+    |
+note: function defined here
+   --> src/handlers/media.rs:160:8
+    |
+160 | pub fn media_router(state: AppState) -> Router {
+    |        ^^^^^^^^^^^^ ---------------
+help: provide the argument
+    |
+140 |         .merge(handlers::media::media_router(/* AppState */))
+    |                                              ++++++++++++++
 
-warning: function `auth_middleware` is never used
-  --> src/middleware/auth.rs:10:14
-   |
-10 | pub async fn auth_middleware(
-   |              ^^^^^^^^^^^^^^^
+error[E0277]: the trait bound `Router<AppState>: From<Router>` is not satisfied
+   --> src/main.rs:140:16
+    |
+140 |         .merge(handlers::media::media_router())
+    |          ----- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `From<Router>` is not implemented for `Router<AppState>`
+    |          |
+    |          required by a bound introduced by this call
+    |
+    = note: required for `Router` to implement `Into<Router<AppState>>`
+note: required by a bound in `Router::<S>::merge`
+   --> /home/marchcat/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/axum-0.8.8/src/routing/mod.rs:254:12
+    |
+252 |     pub fn merge<R>(self, other: R) -> Self
+    |            ----- required by a bound in this associated function
+253 |     where
+254 |         R: Into<Router<S>>,
+    |            ^^^^^^^^^^^^^^^ required by this bound in `Router::<S>::merge`
 
-warning: struct `CommentService` is never constructed
- --> src/services/comment_service.rs:7:12
+warning: unused import: `QueryFilter`
+ --> src/services/category_service.rs:3:56
   |
-7 | pub struct CommentService;
-  |            ^^^^^^^^^^^^^^
+3 |     ActiveModelTrait, ColumnTrait, DbErr, EntityTrait, QueryFilter,
+  |                                                        ^^^^^^^^^^^
 
-warning: associated function `get_comments_with_replies` is never used
-  --> src/services/comment_service.rs:11:18
-   |
- 9 | impl CommentService {
-   | ------------------- associated function in this implementation
-10 |     /// Загрузить комментарии поста с ответами
-11 |     pub async fn get_comments_with_replies(
-   |                  ^^^^^^^^^^^^^^^^^^^^^^^^^
-
-warning: struct `CommentWithReplies` is never constructed
-  --> src/services/comment_service.rs:57:12
-   |
-57 | pub struct CommentWithReplies {
-   |            ^^^^^^^^^^^^^^^^^^
-
-warning: function `verify_token` is never used
-  --> src/utils/jwt.rs:32:8
-   |
-32 | pub fn verify_token(token: &str, secret: &str) -> Result<Claims, jsonwebtoken::errors::Error> {
-   |        ^^^^^^^^^^^^
-
-warning: associated functions `success_with_message`, `error`, and `validation_errors` are never used
-  --> src/utils/response.rs:22:12
-   |
-12 | impl<T: Serialize> AppResponse<T> {
-   | --------------------------------- associated functions in this implementation
-...
-22 |     pub fn success_with_message(data: T, message: String) -> Self {
-   |            ^^^^^^^^^^^^^^^^^^^^
-...
-31 |     pub fn error(message: String) -> Self {
-   |            ^^^^^
-...
-40 |     pub fn validation_errors(errors: Vec<String>) -> Self {
-   |            ^^^^^^^^^^^^^^^^^
-
-warning: `cmsrust` (bin "cmsrust") generated 9 warnings
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 4.68s
+Some errors have detailed explanations: E0061, E0277.
+For more information about an error, try `rustc --explain E0061`.
+warning: `cmsrust` (bin "cmsrust") generated 11 warnings
+error: could not compile `cmsrust` (bin "cmsrust") due to 2 previous errors; 11 warnings emitted
